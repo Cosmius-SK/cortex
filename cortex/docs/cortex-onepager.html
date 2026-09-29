@@ -1,0 +1,152 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f172a;--sub:#475569;--bg:#f8fafc;--card:#fff;--line:#e2e8f0;--acc:#f97316;--acc2:#fb923c;--navy:#0b1b3a;--teal:#0ea5a4;--neo:#64748b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1200px;background:var(--bg);font-family:Inter,"Liberation Sans","DejaVu Sans",sans-serif;color:var(--ink)}
+.hero{background:linear-gradient(135deg,#0b1b3a 0%,#132c5c 60%,#1e3a8a 100%);color:#fff;padding:56px 64px 48px;position:relative;overflow:hidden}
+.hero svg.bg{position:absolute;right:-40px;top:-20px;opacity:.18}
+.tag{display:inline-block;background:var(--acc);color:#fff;font-weight:800;font-size:15px;letter-spacing:.12em;padding:6px 14px;border-radius:999px;text-transform:uppercase}
+h1{font-size:60px;font-weight:900;line-height:1.05;margin:18px 0 14px;letter-spacing:-.02em}
+h1 span{color:var(--acc2)}
+.lead{font-size:23px;line-height:1.45;color:#cbd5e1;max-width:860px}
+.lead b{color:#fff}
+.wrap{padding:40px 64px 48px}
+h2{font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);font-weight:800;margin-bottom:16px}
+.row{display:grid;gap:20px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:repeat(3,1fr)}.c4{grid-template-columns:repeat(4,1fr)}.c5{grid-template-columns:repeat(5,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+.sec{margin-top:36px}
+/* problem vs solution */
+.vs{display:grid;grid-template-columns:1fr 90px 1fr;align-items:stretch}
+.vs .card h3{font-size:22px;font-weight:800;margin:6px 0 8px}
+.vs .card p{font-size:17px;color:var(--sub);line-height:1.45}
+.pill{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.bad .pill{color:#94a3b8}.good{border:2px solid var(--acc)}.good .pill{color:var(--acc)}
+.arrow{display:flex;align-items:center;justify-content:center}
+.mini{display:flex;gap:8px;margin-top:14px;align-items:center}
+/* stats */
+.stat{text-align:center;padding:22px 12px}
+.stat .n{font-size:46px;font-weight:900;color:var(--navy);letter-spacing:-.02em}
+.stat .l{font-size:15px;color:var(--sub);margin-top:4px;line-height:1.35}
+/* scenarios */
+.sc{padding:20px 16px;text-align:center}
+.ic{width:64px;height:64px;border-radius:16px;background:#fff7ed;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.sc h4{font-size:17px;font-weight:800;margin-bottom:6px}
+.sc p{font-size:14px;color:var(--sub);line-height:1.4}
+/* race */
+.race .lbl{display:flex;justify-content:space-between;font-size:16px;font-weight:600;margin:10px 0 6px}
+.bar{height:26px;border-radius:8px}
+.f{background:linear-gradient(90deg,var(--acc),var(--acc2));width:34%}
+.nj{background:var(--neo);width:100%;opacity:.55}
+.note{font-size:13px;color:#94a3b8;margin-top:10px}
+.checks li{list-style:none;font-size:17px;line-height:1.4;padding:9px 0 9px 36px;position:relative;border-bottom:1px dashed var(--line)}
+.checks li:last-child{border:0}
+.checks li:before{content:"";position:absolute;left:0;top:11px;width:22px;height:22px;border-radius:50%;background:var(--teal)}
+.checks li:after{content:"";position:absolute;left:7px;top:15px;width:6px;height:11px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg)}
+.checks b{color:var(--ink)}
+.foot{background:var(--navy);color:#fff;padding:30px 64px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.foot .k{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);font-weight:800}
+.foot .v{font-size:21px;font-weight:800;margin-top:6px}
+.foot .s{font-size:14px;color:#94a3b8;margin-top:2px}
+</style></head><body>
+
+<div class="hero">
+  <svg class="bg" width="520" height="420" viewBox="0 0 520 420" fill="none" stroke="#fff" stroke-width="2">
+    <line x1="80" y1="90" x2="260" y2="60"/><line x1="260" y1="60" x2="420" y2="150"/><line x1="80" y1="90" x2="200" y2="230"/>
+    <line x1="200" y1="230" x2="420" y2="150"/><line x1="200" y1="230" x2="330" y2="340"/><line x1="420" y1="150" x2="330" y2="340"/><line x1="260" y1="60" x2="200" y2="230"/>
+    <circle cx="80" cy="90" r="22" fill="#fff"/><circle cx="260" cy="60" r="16" fill="#fff"/><circle cx="420" cy="150" r="26" fill="#fff"/>
+    <circle cx="200" cy="230" r="30" fill="#fff"/><circle cx="330" cy="340" r="18" fill="#fff"/>
+  </svg>
+  <span class="tag">Cortex · Demo Preview</span>
+  <h1>Proving <span>FalkorDB</span><br>on a 100-year-old bank</h1>
+  <p class="lead">RAG finds <b>similar text</b>. Real business questions need <b>connected facts</b>. We put FalkorDB and our current Neo4j head-to-head, on the same data, in the open.</p>
+</div>
+
+<div class="wrap">
+
+  <div class="sec" style="margin-top:0">
+    <h2>The problem → the answer</h2>
+    <div class="vs">
+      <div class="card bad">
+        <div class="pill">Today · Plain RAG</div>
+        <h3>"Find me documents like this"</h3>
+        <p>Great at lookups. Blind to relationships — can't trace a new regulation to the processes, teams and KPIs it breaks.</p>
+        <div class="mini">
+          <svg width="220" height="40"><g fill="#cbd5e1"><rect x="0" y="6" width="40" height="28" rx="5"/><rect x="60" y="6" width="40" height="28" rx="5"/><rect x="120" y="6" width="40" height="28" rx="5"/><rect x="180" y="6" width="40" height="28" rx="5"/></g></svg>
+        </div>
+      </div>
+      <div class="arrow"><svg width="60" height="40"><path d="M5 20 H45 M33 8 L50 20 L33 32" stroke="#f97316" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="card good">
+        <div class="pill">Tomorrow · GraphRAG on FalkorDB</div>
+        <h3>"Show me everything this touches"</h3>
+        <p>Follows the links: regulation → policy → control → process → team → KPI. Answers with the evidence path.</p>
+        <div class="mini">
+          <svg width="260" height="40"><g stroke="#f97316" stroke-width="3"><line x1="15" y1="20" x2="80" y2="20"/><line x1="80" y1="20" x2="145" y2="20"/><line x1="145" y1="20" x2="210" y2="20"/><line x1="210" y1="20" x2="250" y2="8"/><line x1="210" y1="20" x2="250" y2="34"/></g>
+          <g fill="#f97316"><circle cx="15" cy="20" r="11"/><circle cx="80" cy="20" r="11"/><circle cx="145" cy="20" r="11"/><circle cx="210" cy="20" r="11"/><circle cx="250" cy="8" r="7"/><circle cx="250" cy="34" r="7"/></g></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>The stage · "Cortex Bank" — est. 1926 (100% synthetic)</h2>
+    <div class="row c4">
+      <div class="card stat"><div class="n">100</div><div class="l">years of history, mergers &amp; legacy systems</div></div>
+      <div class="card stat"><div class="n">12</div><div class="l">departments, from Retail to Internal Audit</div></div>
+      <div class="card stat"><div class="n">8</div><div class="l">regulations: Basel, AML/KYC, GDPR, DORA, EU AI Act…</div></div>
+      <div class="card stat"><div class="n">~1M</div><div class="l">customers, accounts &amp; transactions, with hidden fraud rings</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>What you'll try yourself</h2>
+    <div class="row c5">
+      <div class="card sc"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round"><path d="M4 4h12l4 4v12H4z"/><path d="M8 12h8M8 16h5"/></svg></div><h4>Regulation lands</h4><p>Every affected policy, process, team &amp; KPI in under a second</p></div>
+      <div class="card sc"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8"/></svg></div><h4>Ask the bank's AI</h4><p>Answers respect your role and show their evidence trail</p></div>
+      <div class="card sc"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M8.5 7.5l2 8M15.5 7.5l-2 8M9 6h6"/></svg></div><h4>Catch fraud rings</h4><p>Hidden networks surfaced across a million records</p></div>
+      <div class="card sc"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V14M10 20V9M16 20V12M22 20V4"/></svg></div><h4>Risk roll-up</h4><p>From one control to a bank-wide risk score, instantly</p></div>
+      <div class="card sc"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-3M10 2h4"/></svg></div><h4>Head-to-head race</h4><p>Same question, both databases, timed side by side</p></div>
+    </div>
+  </div>
+
+  <div class="sec row c2">
+    <div class="card race">
+      <h2>The race (illustration)</h2>
+      <div class="lbl"><span>FalkorDB</span><span style="color:#f97316">measured live</span></div><div class="bar f"></div>
+      <div class="lbl"><span>Neo4j</span><span style="color:#64748b">measured live</span></div><div class="bar nj"></div>
+      <div class="note">Illustrative only. Real numbers come from the live benchmark, measured on identical hardware.</div>
+      <h2 style="margin-top:22px">What we expect to prove</h2>
+      <ul class="checks">
+        <li><b>Faster</b> multi-step questions</li>
+        <li><b>Leaner</b> memory, so lower infra cost</li>
+        <li><b>Many graphs</b> in one instance, no enterprise licence</li>
+        <li><b>Smarter AI</b> answers than plain RAG</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Why you can trust it</h2>
+      <ul class="checks">
+        <li><b>Fair fight:</b> same machine, same data, same queries</li>
+        <li><b>Open numbers:</b> raw results downloadable</li>
+        <li><b>Reproducible:</b> engineers re-run it with one command</li>
+        <li><b>Honest:</b> where Neo4j wins (tooling, maturity), we say so</li>
+        <li><b>Zero risk:</b> fully synthetic data</li>
+      </ul>
+      <h2 style="margin-top:22px">Built for two audiences</h2>
+      <ul class="checks">
+        <li><b>Executives:</b> click a link, run scenarios, ask questions</li>
+        <li><b>Engineers:</b> benchmark console, raw queries, full repo</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="foot">
+  <div><div class="k">Access</div><div class="v">Public link</div><div class="s">Self-serve, anytime</div></div>
+  <div><div class="k">Hosting</div><div class="v">Free</div><div class="s">Hugging Face Space</div></div>
+  <div><div class="k">AI cost</div><div class="v">~$0.03 / question</div><div class="s">Capped spend</div></div>
+  <div><div class="k">Timeline</div><div class="v">2 days</div><div class="s">Hybrid live + recorded</div></div>
+</div>
+</body></html>
