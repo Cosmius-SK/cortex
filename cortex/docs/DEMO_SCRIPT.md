@@ -11,9 +11,9 @@
 ## Executive track (10 minutes)
 | Min | Screen | Say | Show |
 |---|---|---|---|
-| 0-1 | Overview | "Most AI here finds *similar text*. Real questions need *connected facts*. Same 73 PDFs, same model; the only difference is the graph." | Header stats: 1M+ nodes, 0.5 ms query |
+| 0-1 | Overview | "Most AI here finds *similar text*. Real questions need *connected facts*. Same 73 PDFs, same model; the only difference is the graph." | Header stats: 1M+ nodes, 0.4 ms query |
 | 1-4 | Ask Cortex, question 1 (EU AI Act) | "Left is today's RAG. Right is GraphRAG on FalkorDB." | GraphRAG lists all 6 controls, 4 procedures and 2 open findings. Point at the sources and the tokenomics strip |
-| 4-5 | Engineer view → Evaluation | "We measured it on 34 questions with known answers." | **95% vs 72%** recall · **31 vs 20** fully correct · multi-hop **93% vs 51%** · same tokens per correct answer |
+| 4-5 | Engineer view → Evaluation | "We measured it on 34 questions with known answers." | **97% vs 70%** recall · **31 vs 19** fully correct · multi-hop **97% vs 47%** · same tokens per correct answer |
 | 5-6 | Compare two roles (CRO vs Branch Teller) | "Security is in the graph. The teller never sees audit findings; the model never even receives them." | "N sources withheld" |
 | 6-8 | Scenarios → Fraud rings (role: Compliance) | "Same database, beyond RAG: 60 hidden fraud rings in a million records, in under 2 seconds, no false alarms." | Then switch to Branch Teller: access denied |
 | 8-9 | Scenarios → Regulatory impact / Risk roll-up | "A new regulation lands: here's everything it touches, instantly. And the bank's risk score, from one control up to the board." | Impact table; bank score 60/100 |
@@ -38,5 +38,5 @@
 
 ## Recording checklist (backup video)
 - 1080p browser window, notifications off, PIN already unlocked, questions pre-cached.
-- Record both tracks separately (about 10 and 5 minutes), following the tables above.
-- End on the one-pager (`docs/cortex-onepager.png`).
+- Recorded videos: `docs/video/cortex-exec.mp4` (executive highlights, ~2 min) and `docs/video/cortex-full.mp4` (full tour of every menu, ~3 min).
+- Re-record with `python docs/record_demo.py --mode exec|full` after pre-caching the questions.

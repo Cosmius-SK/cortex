@@ -30,7 +30,7 @@ jobs:
           set -e
           git lfs install
           rm -rf /tmp/space && mkdir /tmp/space
-          rsync -a --exclude data/ --exclude '__pycache__/' --exclude '.venv/' cortex/ /tmp/space/
+          rsync -a --exclude data/ --exclude docs/video/ --exclude '__pycache__/' --exclude '.venv/' cortex/ /tmp/space/
           cd /tmp/space
           git init -q -b main
           git lfs track "*.pdf" "*.png" "*.jpg"

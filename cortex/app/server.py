@@ -178,6 +178,7 @@ if _EVAL_FILE.exists():
     try:
         import json as _json
         EVAL["result"] = _json.loads(_EVAL_FILE.read_text())
+        EVAL["status"] = EVAL["result"].pop("status", None)  # saved run survives restarts
     except Exception:
         pass
 

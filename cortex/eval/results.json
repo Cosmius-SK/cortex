@@ -1,0 +1,38 @@
+{
+ "status": "finished 2026-09-30 17:00 UTC",
+ "summary": {
+  "vector": {
+   "avg_recall": 0.702,
+   "fully_correct": 19,
+   "questions": 34,
+   "input_tokens": 45886,
+   "output_tokens": 2367,
+   "errors": 0,
+   "by_type": {
+    "multi-hop": 0.471,
+    "cross-document": 0.4,
+    "single-fact": 1.0,
+    "aggregation": 1.0
+   },
+   "tokens_per_fully_correct_answer": 2540
+  },
+  "graph": {
+   "avg_recall": 0.965,
+   "fully_correct": 31,
+   "questions": 34,
+   "input_tokens": 74805,
+   "output_tokens": 3769,
+   "errors": 0,
+   "by_type": {
+    "multi-hop": 0.968,
+    "cross-document": 0.4,
+    "single-fact": 1.0,
+    "aggregation": 1.0
+   },
+   "tokens_per_fully_correct_answer": 2535
+  }
+ },
+ "model": "gemini-3.5-flash-lite",
+ "role": "ROLE-CRO",
+ "finished": "2026-09-30 17:00 UTC"
+}

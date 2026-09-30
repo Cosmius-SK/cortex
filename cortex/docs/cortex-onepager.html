@@ -46,16 +46,16 @@ h2{font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--or);
     <div class="res">
       <div class="card bars">
         <div class="metric">Correct IDs found (average recall)</div>
-        <div class="lbl"><span>Vector RAG</span><span>72%</span></div><div class="bar"><i class="v" style="width:72%"></i></div>
-        <div class="lbl"><span>GraphRAG on FalkorDB</span><span style="color:var(--or)">95%</span></div><div class="bar"><i class="g" style="width:95%"></i></div>
+        <div class="lbl"><span>Vector RAG</span><span>70%</span></div><div class="bar"><i class="v" style="width:70%"></i></div>
+        <div class="lbl"><span>GraphRAG on FalkorDB</span><span style="color:var(--or)">97%</span></div><div class="bar"><i class="g" style="width:97%"></i></div>
         <div class="metric">Multi-hop questions (policy → control → procedure → finding)</div>
-        <div class="lbl"><span>Vector RAG</span><span>51%</span></div><div class="bar"><i class="v" style="width:51%"></i></div>
-        <div class="lbl"><span>GraphRAG on FalkorDB</span><span style="color:var(--or)">93%</span></div><div class="bar"><i class="g" style="width:93%"></i></div>
+        <div class="lbl"><span>Vector RAG</span><span>47%</span></div><div class="bar"><i class="v" style="width:47%"></i></div>
+        <div class="lbl"><span>GraphRAG on FalkorDB</span><span style="color:var(--or)">97%</span></div><div class="bar"><i class="g" style="width:97%"></i></div>
         <p class="note">Simple single-fact and list questions: both 100%. The graph wins where facts must be connected.</p>
       </div>
       <div class="big">
-        <div class="kpi"><div class="n">31<small>/34</small> vs 20<small>/34</small></div><div class="l">fully correct answers: GraphRAG vs vector RAG</div></div>
-        <div class="kpi"><div class="n">≈ same</div><div class="l">tokens per correct answer (2,461 vs 2,474): better answers without higher cost</div></div>
+        <div class="kpi"><div class="n">31<small>/34</small> vs 19<small>/34</small></div><div class="l">fully correct answers: GraphRAG vs vector RAG</div></div>
+        <div class="kpi"><div class="n">≈ same</div><div class="l">tokens per correct answer (2,535 vs 2,540): better answers without higher cost</div></div>
         <div class="kpi"><div class="n">$0</div><div class="l">run cost: free Gemini tier, local embeddings, free hosting</div></div>
       </div>
     </div>
@@ -65,7 +65,7 @@ h2{font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--or);
     <h2>…and more: what the same graph does beyond RAG</h2>
     <div class="row c4 more">
       <div class="card"><div class="n">60/60</div><div class="t">Fraud rings caught</div><div class="d">Across 1,005,040 nodes in under 2 s. Zero false alarms.</div></div>
-      <div class="card"><div class="n">0.5 ms</div><div class="t">Regulatory impact</div><div class="d">Regulation → policies → controls → procedures → teams → KRIs → findings.</div></div>
+      <div class="card"><div class="n">0.4 ms</div><div class="t">Regulatory impact</div><div class="d">Regulation → policies → controls → procedures → teams → KRIs → findings.</div></div>
       <div class="card"><div class="n">7 roles</div><div class="t">Access-aware AI</div><div class="d">A teller and a CRO get different answers. Restricted sources never reach the LLM.</div></div>
       <div class="card"><div class="n">1 per user</div><div class="t">Private sandboxes</div><div class="d">Upload a PDF, get your own isolated graph, wiped after 24 hours.</div></div>
     </div>

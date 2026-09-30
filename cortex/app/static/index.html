@@ -276,13 +276,13 @@ async function ask(){
   $("#askBtn").disabled = true; S.last = [];
   const cards = $$("#answers .card");
   await Promise.all(jobs.map(async ([mode, r], i) => {
-    try { const a = await one(q, mode, r); S.last.push(a); cards[i].innerHTML = render(a, titles[i]); if(a.quota) showQuota(a.quota);
+    try { const a = await one(q, mode, r); S.last[i] = {...a, title: titles[i]}; cards[i].innerHTML = render(a, titles[i]); if(a.quota) showQuota(a.quota);
       if(!a.cached && a.tokenomics){ S.tokens += a.tokenomics.input_tokens + a.tokenomics.output_tokens; S.cost += a.tokenomics.cost_usd; }
       $("#spend").textContent = `Session: ${S.tokens.toLocaleString()} tokens · $${S.cost.toFixed(4)}`;
     } catch(e){ cards[i].innerHTML = `<h3>${titles[i]}</h3><p class="err">${esc(e.message)}</p>`; if(/PIN|key/.test(e.message)) openSettings(); }
   }));
   $("#askBtn").disabled = false;
-  $("#lastCypher").innerHTML = S.last.map(a => `<p><b>${a.mode === "graph" ? "GraphRAG" : "Vector RAG"}</b> · retrieval ${a.retrieval_ms} ms · ${a.facts.length} graph facts</p><pre>${esc(a.cypher)}</pre>`).join("");
+  $("#lastCypher").innerHTML = S.last.filter(Boolean).map(a => `<p><b>${esc(a.title)}</b> · retrieval ${a.retrieval_ms} ms · ${a.facts.length} graph facts</p><pre>${esc(a.cypher)}</pre>`).join("");
 }
 const roleName = id => ($("#role").querySelector(`option[value="${id}"]`)||{}).textContent || id;
 function render(a, title){
