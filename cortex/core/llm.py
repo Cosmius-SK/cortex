@@ -29,7 +29,12 @@ def gemini_model(api_key):
         import re
         from google import genai
         names = []
-        for m in genai.Client(api_key=api_key).models.list():
+        client = genai.Client(api_key=api_key)  # keep a reference: the pager needs the client alive while iterating
+        try:
+            models = list(client.models.list())
+        except Exception:
+            models = []  # listing not permitted: fall back to Google's rolling alias
+        for m in models:
             name = (m.name or "").removeprefix("models/")
             if "generateContent" in (m.supported_actions or []) and "flash" in name and not re.search(
                     r"lite|image|tts|audio|live|thinking|exp|preview|embed|8b", name):
