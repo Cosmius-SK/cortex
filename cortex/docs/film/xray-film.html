@@ -1,0 +1,342 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Cortex X-Ray film</title>
+<!-- Deterministic 3D explainer: window.renderAt(seconds) draws one frame. Rendered to MP4 by render_film.py. Open with ?play to preview. -->
+<style>
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#050b1a;font-family:"Liberation Sans","DejaVu Sans",Arial,sans-serif}
+canvas{position:absolute;inset:0}
+#ov,#vig,#fade{position:absolute;inset:0;pointer-events:none}
+#vig{background:radial-gradient(ellipse at center,rgba(5,11,26,0) 55%,rgba(2,5,14,.75) 100%)}
+#fade{background:#050b1a}
+.brand{position:absolute;left:64px;top:50px;color:#fff;font-weight:800;letter-spacing:.24em;font-size:22px}.brand span{color:#fb923c}
+.brand small{display:block;font-size:14px;letter-spacing:.3em;color:#64748b;margin-top:6px;font-weight:700}
+.cap{position:absolute;left:0;right:0;bottom:92px;text-align:center;color:#fff}
+.k{display:inline-block;color:#fb923c;font-weight:800;letter-spacing:.3em;font-size:21px;text-transform:uppercase;margin-bottom:16px}
+.t{font-size:50px;font-weight:800;line-height:1.18;text-shadow:0 4px 34px rgba(0,0,0,.9);max-width:1560px;margin:0 auto}
+.s{font-size:27px;color:#cbd5e1;margin:14px auto 0;max-width:1400px;line-height:1.4;text-shadow:0 2px 20px rgba(0,0,0,.9)}
+.big{position:absolute;left:0;right:0;top:360px;text-align:center;color:#fff}
+.big .t{font-size:96px;letter-spacing:-.01em}.big .t span{color:#fb923c}.big .s{font-size:32px}
+.counter{position:absolute;right:70px;top:60px;text-align:right;color:#fff}
+.counter .n{font-size:64px;font-weight:800;color:#f87171}.counter .l{font-size:18px;letter-spacing:.2em;color:#94a3b8;font-weight:700}
+.prog{position:absolute;left:64px;right:64px;bottom:40px;height:3px;background:rgba(255,255,255,.08)}.prog i{display:block;height:100%;background:#f97316}
+</style>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script>
+</head><body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="vig"></div>
+<div id="ov">
+  <div class="brand">CORTEX <span>X-RAY</span><small>FALKORDB · LANGCHAIN · GRAPHRAG</small></div>
+  <div class="counter" id="counter"><div class="n" id="cn">0 / 60</div><div class="l">FRAUD RINGS FOUND</div></div>
+  <div class="big" id="big"><div class="t" id="bt"></div><div class="s" id="bs"></div></div>
+  <div class="cap" id="cap"><div class="k" id="ck"></div><div class="t" id="ct"></div><div class="s" id="cs"></div></div>
+  <div class="prog"><i id="pg"></i></div>
+</div>
+<div id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+
+const W = 1920, H = 1080, DUR = 94;
+const renderer = new THREE.WebGLRenderer({canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true});
+renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050b1a);
+scene.fog = new THREE.FogExp2(0x050b1a, 0.006);
+const cam = new THREE.PerspectiveCamera(42, W / H, 0.1, 3000);
+scene.add(new THREE.AmbientLight(0x8899ff, 0.7));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(12, 24, 18); scene.add(sun);
+const warm = new THREE.PointLight(0xf97316, 60, 50, 1.5); scene.add(warm);
+
+// ---------- helpers ----------
+let seed = 1926; const rnd = () => (seed = (seed * 16807) % 2147483647, (seed - 1) / 2147483646);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const lerp = (a, b, x) => a + (b - a) * x;
+const win = (t, a, b, f = .8) => Math.min(seg(t, a, a + f), 1 - seg(t, b - f, b));   // fade in/out window
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const C = {or: 0xf97316, or2: 0xfb923c, teal: 0x2dd4bf, blue: 0x60a5fa, indigo: 0x818cf8, violet: 0xa78bfa, red: 0xf87171, grey: 0x94a3b8, navy: 0x1e3a8a, white: 0xffffff};
+
+const GLOW = (() => { const cv = document.createElement("canvas"); cv.width = cv.height = 128; const g = cv.getContext("2d");
+  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  [[0, 1], [.18, .85], [.45, .22], [1, 0]].forEach(([o, a]) => gr.addColorStop(o, `rgba(255,255,255,${a})`));
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(cv); })();
+
+function glow(color, size) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({map: GLOW, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
+  s.scale.setScalar(size); s.userData.size = size; return s;
+}
+function label(text, sub = "", {color = "#ffffff", sub2 = "#94a3b8", scale = 7, align = "center", size = 84} = {}) {
+  const w = 2048, h = 360, cv = document.createElement("canvas"); cv.width = w; cv.height = h; const g = cv.getContext("2d");
+  g.textAlign = align; g.textBaseline = "middle"; const x = align === "left" ? 20 : w / 2;
+  g.shadowColor = "rgba(0,0,0,.85)"; g.shadowBlur = 24;
+  g.font = `800 ${size}px "Liberation Sans","DejaVu Sans",Arial`; g.fillStyle = color; g.fillText(text, x, sub ? h * .36 : h / 2);
+  if (sub) { g.font = `600 ${Math.round(size * .5)}px "Liberation Sans","DejaVu Sans",Arial`; g.fillStyle = sub2; g.fillText(sub, x, h * .72); }
+  const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 8;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({map: tex, transparent: true, depthWrite: false}));
+  s.scale.set(scale, scale * h / w, 1); if (align === "left") s.center.set(0, .5); return s;
+}
+function setAlpha(obj, a) {
+  obj.visible = a > .002;
+  obj.traverse(o => { const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    ms.forEach(m => { if (m.userData.base === undefined) m.userData.base = m.opacity; m.transparent = true; m.opacity = m.userData.base * a; }); });
+}
+function lines(pairs, color, opacity = .5) {
+  const pos = new Float32Array(pairs.length * 6), col = new Float32Array(pairs.length * 6);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  const c = new THREE.Color(color); for (let i = 0; i < pairs.length * 2; i++) col.set([c.r, c.g, c.b], i * 3);
+  return new THREE.LineSegments(geo, new THREE.LineBasicMaterial({vertexColors: true, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false}));
+}
+function setLine(ls, i, a, b) { const p = ls.geometry.attributes.position.array; p.set([a.x, a.y, a.z, b.x, b.y, b.z], i * 6); }
+function setLineColor(ls, i, c) { const p = ls.geometry.attributes.color.array; p.set([c.r, c.g, c.b, c.r, c.g, c.b], i * 6); }
+
+// ---------- shared knowledge graph ----------
+const TYPES = [["Regulation", C.or, .06], ["Policy", C.blue, .16], ["Control", C.teal, .26], ["Procedure", C.violet, .2], ["Finding", C.red, .1], ["Chunk", C.grey, .22]];
+function makeKG(N, R) {
+  const nodes = [];
+  for (let i = 0; i < N; i++) {
+    const phi = Math.acos(1 - 2 * (i + .5) / N), th = Math.PI * (1 + Math.sqrt(5)) * i, r = R * (.55 + .45 * Math.cbrt(rnd()));
+    let u = rnd(), ty = 0; for (let k = 0; k < TYPES.length; k++) { u -= TYPES[k][2]; if (u <= 0) { ty = k; break; } ty = k; }
+    nodes.push({p: V(r * Math.sin(phi) * Math.cos(th), r * Math.cos(phi) * .8, r * Math.sin(phi) * Math.sin(th)), ty, adj: []});
+  }
+  const edges = [];
+  nodes.forEach((n, i) => { const d = nodes.map((m, j) => [n.p.distanceTo(m.p), j]).filter(x => x[1] !== i).sort((a, b) => a[0] - b[0]);
+    for (let k = 0; k < 2 + (rnd() < .4); k++) { const j = d[k][1]; if (!n.adj.includes(j)) { n.adj.push(j); nodes[j].adj.push(i); edges.push([i, j]); } } });
+  return {nodes, edges};
+}
+const KG = makeKG(150, 7);
+function kgObject(kg, sizeMul = 1) {
+  const g = new THREE.Group();
+  kg.nodes.forEach(n => { n.s = glow(TYPES[n.ty][1], (n.ty === 5 ? .55 : .95) * sizeMul); n.s.position.copy(n.p); g.add(n.s);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(.09 * sizeMul, 12, 12), new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true}));
+    core.position.copy(n.p); g.add(core); });
+  const ls = lines(kg.edges, 0x3b5bdb, .45); kg.edges.forEach(([a, b], i) => setLine(ls, i, kg.nodes[a].p, kg.nodes[b].p)); g.add(ls);
+  return {g, ls};
+}
+
+// ---------- background ----------
+const stars = (() => { const n = 4000, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { const r = 250 + rnd() * 500, a = rnd() * Math.PI * 2, b = Math.acos(2 * rnd() - 1); pos.set([r * Math.sin(b) * Math.cos(a), r * Math.cos(b), r * Math.sin(b) * Math.sin(a)], i * 3); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  return new THREE.Points(geo, new THREE.PointsMaterial({size: 2.2, map: GLOW, color: 0x7788bb, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: false})); })();
+scene.add(stars);
+
+// ---------- scene 2: the stack ----------
+const LAYERS = [["Browser", "Single-page UI · Cytoscape.js · keys encrypted in your browser", C.blue],
+  ["Hosting", "Hugging Face Space · GitHub Actions deploy · $0", C.indigo],
+  ["API & guardrails", "FastAPI · PIN · quotas · role filter · 24 h sandbox wipe", C.teal],
+  ["AI orchestration", "LangChain · local embeddings · Gemini or Claude", C.violet],
+  ["FalkorDB", "Graph + vector + access control in one in-memory engine", C.or],
+  ["Data", "73 synthetic bank PDFs · 1M-node operational graph", C.grey]];
+const stack = new THREE.Group(); scene.add(stack);
+const slabs = LAYERS.map(([name, sub, col], i) => {
+  const g = new THREE.Group(), hero = name === "FalkorDB";
+  const box = new THREE.Mesh(new THREE.BoxGeometry(14, .38, 8), new THREE.MeshStandardMaterial({color: col, emissive: col, emissiveIntensity: hero ? .55 : .12, transparent: true, opacity: hero ? .42 : .16, metalness: .3, roughness: .25, depthWrite: false}));
+  const edge = new THREE.LineSegments(new THREE.EdgesGeometry(box.geometry), new THREE.LineBasicMaterial({color: col, transparent: true, opacity: .95}));
+  const lb = label(name, sub, {color: hero ? "#fb923c" : "#ffffff", align: "left", scale: 22, size: hero ? 100 : 88});
+  lb.position.set(7.8, 0, 0); g.add(box, edge, lb);
+  if (hero) { for (let k = 0; k < 46; k++) { const s = glow([C.or, C.or2, C.teal, C.blue][k % 4], .6); s.position.set((rnd() - .5) * 12, (rnd() - .5) * .2, (rnd() - .5) * 7); g.add(s); } }
+  g.userData = {y: 7.5 - i * 3, from: (i % 2 ? 1 : -1) * 46, hero}; stack.add(g); return g;
+});
+const beam = []; for (let k = 0; k < 36; k++) { const s = glow(k % 3 ? C.teal : C.or, .5); s.userData.ph = rnd(); stack.add(s); beam.push(s); }
+
+// ---------- scene 3: ingestion ----------
+const ingest = new THREE.Group(); scene.add(ingest);
+function pageTex(id) { const cv = document.createElement("canvas"); cv.width = 256; cv.height = 340; const g = cv.getContext("2d");
+  g.fillStyle = "#f8fafc"; g.fillRect(0, 0, 256, 340); g.fillStyle = "#0b1b3a"; g.fillRect(0, 0, 256, 44);
+  g.fillStyle = "#fb923c"; g.font = "bold 20px Arial"; g.fillText(id, 14, 29);
+  g.fillStyle = "#cbd5e1"; for (let y = 64; y < 330; y += 16) g.fillRect(14, y, 228 * (.55 + .45 * ((y * 7) % 11) / 11), 7);
+  return new THREE.CanvasTexture(cv); }
+const IDS = ["POL-AI-001", "SOP-ITC-003", "REG-EUAI", "AR-2025-07", "KRI-AI", "GRD-003", "POL-AML-001", "SOP-CRD-002"];
+const pages = IDS.map((id, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.9), new THREE.MeshBasicMaterial({map: pageTex(id), transparent: true, side: THREE.DoubleSide}));
+  m.userData.i = i; ingest.add(m); return m; });
+const chunks = []; pages.forEach((p, i) => { for (let k = 0; k < 5; k++) { const c = new THREE.Mesh(new THREE.BoxGeometry(.42, .42, .42), new THREE.MeshStandardMaterial({color: C.teal, emissive: C.teal, emissiveIntensity: .6, transparent: true}));
+  c.userData = {page: i, k, target: V(-1 + (k - 2) * .62, 3.6 - i * 1.02, 0)}; ingest.add(c); chunks.push(c); } });
+const KG2 = makeKG(90, 4.6); const kg2 = kgObject(KG2, .9); kg2.g.position.set(9, 0, 0); ingest.add(kg2.g);
+const flyers = chunks.flatMap((c, i) => [0, 1].map(k => { const s = glow(TYPES[(i + k) % 5][1], .7); s.userData = {c, target: KG2.nodes[(i * 2 + k) % KG2.nodes.length].p}; ingest.add(s); return s; }));
+[["73 PDFs", "LangChain PyPDFLoader", -12], ["Chunks + embeddings", "splitter 900/120 · bge-base 768-d", -1], ["Knowledge graph", "entities + relationships in FalkorDB", 9]]
+  .forEach(([a, b, x]) => { const l = label(a, b, {scale: 15}); l.position.set(x, 5.9, 0); ingest.add(l); });
+
+// ---------- scene 4: sparse matrix ----------
+const matrix = new THREE.Group(); scene.add(matrix);
+const M = 22, kgSmall = kgObject(makeKG(60, 4), .8); kgSmall.g.position.set(-10, 0, 0); matrix.add(kgSmall.g);
+const cells = [], litSet = new Set();
+for (let i = 0; i < M; i++) for (let j = 0; j < M; j++) if (i !== j && rnd() < .09) { litSet.add(i * M + j); litSet.add(j * M + i); }
+for (let i = 0; i < M; i++) for (let j = 0; j < M; j++) {
+  const lit = litSet.has(i * M + j);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(.36, .36, lit ? .3 : .06), new THREE.MeshStandardMaterial({color: lit ? C.or : 0x1e2d57, emissive: lit ? C.or : 0x0b1633, emissiveIntensity: lit ? .9 : .3, transparent: true, opacity: lit ? 1 : .55}));
+  m.userData = {i, j, lit, home: V(1 + j * .42, 4.4 - i * .42, 0)}; m.position.copy(m.userData.home); matrix.add(m); cells.push(m);
+}
+const vecIn = [], vecOut = [];
+const seedsVec = new Set([3, 11, 17]);
+for (let i = 0; i < M; i++) {
+  const a = new THREE.Mesh(new THREE.BoxGeometry(.36, .36, .2), new THREE.MeshStandardMaterial({color: seedsVec.has(i) ? C.teal : 0x1e2d57, emissive: seedsVec.has(i) ? C.teal : 0x0b1633, emissiveIntensity: .9, transparent: true}));
+  a.position.set(11.4, 4.4 - i * .42, 0); matrix.add(a); vecIn.push(a);
+  const hit = [...seedsVec].some(s => litSet.has(i * M + s));
+  const b = new THREE.Mesh(new THREE.BoxGeometry(.36, .36, .2), new THREE.MeshStandardMaterial({color: 0x1e2d57, emissive: hit ? C.or : 0x0b1633, emissiveIntensity: 0, transparent: true}));
+  b.userData.hit = hit; b.position.set(13.6, 4.4 - i * .42, 0); matrix.add(b); vecOut.push(b);
+}
+const sweep = new THREE.Mesh(new THREE.PlaneGeometry(9.6, .44), new THREE.MeshBasicMaterial({color: C.white, transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false})); matrix.add(sweep);
+[["Graph", "nodes and relationships", -10, 6.4], ["HAS_CONTROL as a sparse matrix", "lit cell = relationship exists", 5.4, 6.4], ["×", "", 10.4, .1], ["seeds", "", 11.4, 5.4], ["=", "", 12.5, .1], ["1 hop", "", 13.6, 5.4]]
+  .forEach(([a, b, x, y]) => { const l = label(a, b, {scale: a.length < 3 ? 6 : a.length < 8 ? 11 : 14}); l.position.set(x, y, .2); matrix.add(l); });
+
+// ---------- scene 5: life of a question ----------
+const life = new THREE.Group(); scene.add(life);
+const kgL = kgObject(KG, 1); life.add(kgL.g);
+const restricted = new Set(KG.nodes.map((n, i) => n.ty === 4 && i % 2 ? i : -1).filter(i => i >= 0));
+const top = V(0, 9, 0);
+const chunkIdx = KG.nodes.map((n, i) => [n, i]).filter(([n, i]) => n.ty === 5 && !restricted.has(i)).sort((a, b) => a[0].p.distanceTo(top) - b[0].p.distanceTo(top)).slice(0, 5).map(x => x[1]);
+const seedIdx = [...new Set(chunkIdx.flatMap(i => KG.nodes[i].adj.filter(j => KG.nodes[j].ty !== 5 && !restricted.has(j))))].slice(0, 5);
+const hop1 = [...new Set(seedIdx.flatMap(i => KG.nodes[i].adj))].filter(j => !restricted.has(j) && !seedIdx.includes(j));
+const hop2 = [...new Set(hop1.flatMap(i => KG.nodes[i].adj))].filter(j => !restricted.has(j) && !seedIdx.includes(j) && !hop1.includes(j));
+const edgeIdx = (a, b) => KG.edges.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a));
+const hopEdges = [seedIdx.flatMap(s => KG.nodes[s].adj.filter(j => hop1.includes(j)).map(j => edgeIdx(s, j))), hop1.flatMap(s => KG.nodes[s].adj.filter(j => hop2.includes(j)).map(j => edgeIdx(s, j)))];
+const seedEdges = chunkIdx.flatMap(c => KG.nodes[c].adj.filter(j => seedIdx.includes(j)).map(j => edgeIdx(c, j)));
+const orb = glow(C.white, 2.2); life.add(orb); const orbCore = glow(C.or, 1.2); life.add(orbCore);
+const qLabel = label("“Which controls are affected by the EU AI Act?”", "asked as Chief Risk Officer", {scale: 24}); life.add(qLabel);
+const shield = new THREE.Mesh(new THREE.IcosahedronGeometry(8.4, 2), new THREE.MeshBasicMaterial({color: C.teal, wireframe: true, transparent: true, opacity: .22})); life.add(shield);
+const ring = new THREE.Mesh(new THREE.TorusGeometry(1, .04, 8, 90), new THREE.MeshBasicMaterial({color: C.teal, transparent: true, opacity: .9, blending: THREE.AdditiveBlending})); ring.rotation.x = Math.PI / 2; life.add(ring);
+const prism = new THREE.Mesh(new THREE.OctahedronGeometry(1.6), new THREE.MeshStandardMaterial({color: C.violet, emissive: C.violet, emissiveIntensity: .8, metalness: .4, roughness: .2, transparent: true}));
+prism.position.set(0, 13, 0); life.add(prism); const prismGlow = glow(C.violet, 7); prismGlow.position.copy(prism.position); life.add(prismGlow);
+const llmLabel = label("LLM", "Gemini (free) or Claude · via LangChain", {scale: 16}); llmLabel.position.set(0, 15.6, 0); life.add(llmLabel);
+const ansLabel = label("Answer + sources + tokenomics", "6 controls · 4 procedures · 2 open findings", {color: "#fb923c", scale: 24}); ansLabel.position.set(0, 18.4, 0); life.add(ansLabel);
+const litNodes = [...seedIdx, ...hop1, ...hop2];
+const stream = []; for (let k = 0; k < 90; k++) { const s = glow(k % 2 ? C.or : C.teal, .45); s.userData = {from: KG.nodes[litNodes[k % litNodes.length]].p, ph: rnd()}; life.add(s); stream.push(s); }
+
+// ---------- scene 6: fraud galaxy ----------
+const fraud = new THREE.Group(); scene.add(fraud);
+const NP = 60000, gpos = new Float32Array(NP * 3), gcol = new Float32Array(NP * 3);
+for (let i = 0; i < NP; i++) { const arm = i % 4, r = 6 + Math.pow(rnd(), .7) * 120, a = r * .045 + arm * Math.PI / 2 + (rnd() - .5) * .7;
+  gpos.set([Math.cos(a) * r + (rnd() - .5) * 7, (rnd() - .5) * (14 - r * .08), Math.sin(a) * r + (rnd() - .5) * 7], i * 3);
+  const c = new THREE.Color([0x3b5bdb, 0x60a5fa, 0x2dd4bf, 0x818cf8][i % 4]).multiplyScalar(.45 + rnd() * .4); gcol.set([c.r, c.g, c.b], i * 3); }
+const gg = new THREE.BufferGeometry(); gg.setAttribute("position", new THREE.BufferAttribute(gpos, 3)); gg.setAttribute("color", new THREE.BufferAttribute(gcol, 3));
+fraud.add(new THREE.Points(gg, new THREE.PointsMaterial({size: .9, map: GLOW, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending})));
+const rings = []; for (let k = 0; k < 60; k++) {
+  const idx = Math.floor(rnd() * NP), c = V(gpos[idx * 3], gpos[idx * 3 + 1], gpos[idx * 3 + 2]), g = new THREE.Group(); g.position.copy(c);
+  const pts = []; for (let m = 0; m < 6; m++) { const a = m / 6 * Math.PI * 2; pts.push(V(Math.cos(a) * 1.6, (rnd() - .5) * .8, Math.sin(a) * 1.6)); const s = glow(C.red, 1.3); s.position.copy(pts[m]); g.add(s); }
+  const ls = lines(pts.map((_, m) => [m, (m + 1) % 6]).concat([[0, 3], [1, 4], [2, 5]]), C.red, .9); pts.forEach((p, m) => setLine(ls, m, p, pts[(m + 1) % 6])); [[0, 3], [1, 4], [2, 5]].forEach(([a, b], m) => setLine(ls, 6 + m, pts[a], pts[b])); g.add(ls);
+  const halo = glow(C.red, 7); g.add(halo); g.userData.t = 69.5 + k * .1; fraud.add(g); rings.push(g); }
+const ringFocus = rings[7].position.clone();
+
+// ---------- scene 7: results ----------
+const results = new THREE.Group(); scene.add(results);
+const grid = new THREE.GridHelper(60, 30, 0x1e3a8a, 0x13224a); grid.position.y = -5; results.add(grid);
+const METRICS = [["Average recall", 70, 97, "70%", "97%"], ["Multi-hop recall", 47, 97, "47%", "97%"], ["Fully correct", 56, 91, "19 / 34", "31 / 34"]];
+const bars = METRICS.flatMap(([name, v, g, lv, lg], i) => { const x = -12 + i * 12;
+  const l = label(name, "", {scale: 16}); l.position.set(x, 9.2, 0); results.add(l);
+  return [[v, C.grey, x - 1.4, lv, "Vector RAG"], [g, C.or, x + 1.4, lg, "GraphRAG"]].map(([val, col, bx, txt, who]) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1, 2.2), new THREE.MeshStandardMaterial({color: col, emissive: col, emissiveIntensity: col === C.or ? .55 : .15, metalness: .3, roughness: .35, transparent: true}));
+    m.position.set(bx, -5, 0); results.add(m); const vl = label(txt, who, {scale: 13, color: col === C.or ? "#fb923c" : "#cbd5e1"}); results.add(vl);
+    return {m, vl, h: val / 100 * 11, i}; }); });
+
+// ---------- scene 8: end ----------
+const endG = new THREE.Group(); scene.add(endG); const kgE = kgObject(makeKG(120, 6), 1); endG.add(kgE.g);
+
+// ---------- captions ----------
+const CAPS = [
+  [8, 20.6, "The stack", "Six layers. One engine at the core.", "Browser → Hugging Face → FastAPI → LangChain → FalkorDB → data"],
+  [21.6, 27.2, "Ingestion", "73 bank PDFs become a knowledge graph", "LangChain splits them into chunks · local embeddings · entity extraction with 0 tokens"],
+  [27.2, 32.8, "Ingestion", "Text, vectors and relationships land in one engine", "Chunks, embeddings and entities all live in FalkorDB"],
+  [33.6, 40.4, "Inside FalkorDB", "Every relationship type is a sparse matrix", "FalkorDB stores graphs as GraphBLAS sparse adjacency matrices"],
+  [40.4, 46.8, "Inside FalkorDB", "One hop = one matrix multiplication", "That is why multi-hop queries stay in milliseconds"],
+  [47.6, 50, "Life of a question", "A tester asks a question", ""],
+  [50, 52.6, "Step 1 · Access", "Restricted documents are sealed off first", "Role → CAN_ACCESS → documents, before anything reaches the AI"],
+  [52.6, 55.4, "Step 2 · Vector search", "The HNSW index finds the closest passages", "Same engine, same query language"],
+  [55.4, 57.8, "Step 3 · Seeds", "Entities those passages mention become seeds", ""],
+  [57.8, 61.4, "Step 4 · Graph expansion", "Two hops: regulation → policy → control → procedure → finding", "One Cypher query, a few milliseconds"],
+  [61.4, 65.8, "Step 5 · Answer", "Connected facts go to the LLM", "Gemini or Claude answers with sources and tokenomics"],
+  [66.6, 72.2, "Beyond RAG", "The same engine hunts fraud rings", "1,005,040 customers, accounts, devices and transfers"],
+  [72.2, 77.8, "Beyond RAG", "60 of 60 rings found in under 2 seconds", "Zero false alarms · pure Cypher · no AI tokens"],
+  [78.6, 87.8, "Measured", "GraphRAG on FalkorDB vs vector RAG", "34 questions with known answers · same PDFs, same LLM · about the same tokens per correct answer"]];
+const BIG = [[.6, 7, "Cortex <span>X-Ray</span>", "What's inside a GraphRAG system built on FalkorDB"], [88.6, 94.5, "Why <span>FalkorDB</span> for AI", "sk-aiu-cortex.hf.space · FalkorDB + LangChain · 100% synthetic · $0"]];
+const $ = id => document.getElementById(id);
+function overlay(t) {
+  const c = CAPS.find(c => t >= c[0] && t < c[1]); $("cap").style.opacity = c ? win(t, c[0], c[1], .5) : 0;
+  if (c) { $("ck").textContent = c[2]; $("ct").textContent = c[3]; $("cs").textContent = c[4]; $("cs").style.display = c[4] ? "block" : "none"; }
+  const b = BIG.find(b => t >= b[0] && t < b[1]); $("big").style.opacity = b ? win(t, b[0], b[1], .9) : 0;
+  if (b) { $("bt").innerHTML = b[2]; $("bs").textContent = b[3]; }
+  const found = Math.round(clamp((t - 69.5) / 6) * 60); $("cn").textContent = `${found} / 60`; $("counter").style.opacity = win(t, 67, 78, .6);
+  $("pg").style.width = (t / DUR * 100) + "%";
+  const cuts = [7, 21, 33, 47, 66, 78, 88]; let f = Math.max(1 - t / 1.2, seg(t, DUR - 1.2, DUR));
+  cuts.forEach(x => f = Math.max(f, 1 - Math.abs(t - x) / .45)); $("fade").style.opacity = clamp(f);
+}
+
+// ---------- per-frame ----------
+const look = V(0, 0, 0);
+function camOrbit(r, h, ang, target = look) { cam.position.set(target.x + Math.sin(ang) * r, target.y + h, target.z + Math.cos(ang) * r); cam.lookAt(target); }
+window.renderAt = function (t) {
+  stars.rotation.y = t * .01;
+  [stack, ingest, matrix, life, fraud, results, endG].forEach(g => g.visible = false);
+  warm.intensity = 0;
+  if (t < 7) { // title: graph drifting behind the title
+    setAlpha(endG, .35 * win(t, 0, 7.2, 1.5)); kgE.g.rotation.y = t * .12; camOrbit(30 - t * .6, 2, t * .05);
+  } else if (t < 21) { // stack
+    const u = t - 7; setAlpha(stack, 1);
+    slabs.forEach((s, i) => { const p = ease(seg(u, .3 + i * .45, 1.9 + i * .45)); s.position.set(lerp(s.userData.from, 0, p), s.userData.y, 0); s.rotation.y = (1 - p) * .6 * Math.sign(s.userData.from);
+      if (s.userData.hero) s.children[0].material.emissiveIntensity = .45 + .25 * Math.sin(t * 3); });
+    beam.forEach(b => { const y = 8.5 - ((b.userData.ph * 17 + u * 4) % 17); b.position.set(-5.5 + (b.userData.ph - .5) * .6, y, 2.5); setAlpha(b, seg(u, 3.5, 4.5)); });
+    warm.position.set(0, -4.5, 3); warm.intensity = 80 * seg(u, 2, 4);
+    const z = ease(seg(u, 11, 14)); camOrbit(lerp(40, 16, z), lerp(7, -3.2, z), lerp(-.45, .3, ease(seg(u, 0, 11))), V(lerp(7, 3, z), lerp(0, -4.5, z), 0));
+  } else if (t < 33) { // ingestion
+    const u = t - 21; setAlpha(ingest, 1);
+    pages.forEach((p, i) => { const fan = ease(seg(u, 0, 1.6)); p.position.set(-12 + (i - 3.5) * .28 * fan, (i - 3.5) * .5 * fan, (i - 3.5) * -.1); p.rotation.set(0, .35, (i - 3.5) * .06 * fan);
+      setAlpha(p, 1 - seg(u, 3.6 + i * .15, 4.6 + i * .15)); });
+    chunks.forEach(c => { const st = 3 + c.userData.page * .15 + c.userData.k * .04, p = ease(seg(u, st, st + 1.4)), from = pages[c.userData.page].position;
+      c.position.lerpVectors(from, c.userData.target, p); c.rotation.set(u + c.userData.k, u * .7, 0); setAlpha(c, seg(u, st, st + .2)); });
+    flyers.forEach((f, i) => { const st = 6 + (i % 40) * .06, p = ease(seg(u, st, st + 1.6)), tgt = f.userData.target.clone().add(kg2.g.position);
+      f.position.lerpVectors(f.userData.c.position, tgt, p); setAlpha(f, seg(u, st, st + .2) * (1 - seg(u, st + 1.5, st + 1.9))); });
+    setAlpha(kg2.g, seg(u, 6.8, 9)); kg2.g.rotation.y = u * .15;
+    camOrbit(33, 3, lerp(-.12, .12, u / 12), V(-1, .8, 0));
+  } else if (t < 47) { // sparse matrix
+    const u = t - 33; setAlpha(matrix, 1); kgSmall.g.rotation.y = u * .3;
+    cells.forEach(c => { const d = (c.userData.i + c.userData.j) * .05, p = ease(seg(u, 1.5 + d, 2.6 + d)); c.scale.setScalar(Math.max(p, .001)); c.position.z = (1 - p) * 4;
+      if (c.userData.lit) c.material.emissiveIntensity = .7 + .3 * Math.sin(t * 4 + c.userData.i); });
+    vecIn.forEach((a, i) => { const p = ease(seg(u, 7, 8 + i * .02)); a.scale.setScalar(Math.max(p, .001)); });
+    const row = (u - 8.4) / 4 * M; sweep.position.set(1 + (M - 1) * .21, 4.4 - clamp(row, 0, M - 1) * .42, .25); setAlpha(sweep, u > 8.4 && u < 12.6 ? 1 : 0);
+    vecOut.forEach((b, i) => { const on = row >= i && b.userData.hit; b.material.emissiveIntensity = on ? 1 : 0; b.material.color.set(on ? C.or : 0x1e2d57); b.scale.setScalar(Math.max(ease(seg(u, 7, 8)), .001)); });
+    camOrbit(lerp(34, 27, ease(seg(u, 0, 14))), 2, lerp(-.3, .12, ease(seg(u, 0, 14))), V(2, 0, 0));
+  } else if (t < 66) { // life of a question
+    const u = t - 47; setAlpha(life, 1); kgL.g.rotation.y = 0;
+    const o = ease(seg(u, .3, 2.8)); orb.position.set(0, lerp(12.5, 8.8, o), 0); orbCore.position.copy(orb.position); setAlpha(orb, 1 - seg(u, 15, 16)); setAlpha(orbCore, 1 - seg(u, 15, 16));
+    qLabel.position.set(0, orb.position.y + 1.7, 0); setAlpha(qLabel, win(u, .5, 5.5));
+    setAlpha(shield, .9 * seg(u, 3, 4) * (1 - seg(u, 15, 17))); shield.rotation.y = u * .15;
+    KG.nodes.forEach((n, i) => { let col = TYPES[n.ty][1], sz = n.s.userData.size, a = 1;
+      if (restricted.has(i) && u > 3.2) { col = 0x7f1d1d; sz *= .6; a = .5; }
+      if (chunkIdx.includes(i) && u > 6.2) { col = C.teal; sz *= 2 + .3 * Math.sin(t * 6); }
+      if (seedIdx.includes(i) && u > 8.6) { col = C.or; sz *= 2.4; }
+      if (hop1.includes(i) && u > 11.4) { col = C.or2; sz *= 1.7; }
+      if (hop2.includes(i) && u > 12.9) { col = C.or2; sz *= 1.45; }
+      if (u > 3 && !restricted.has(i) && !litNodes.includes(i) && !chunkIdx.includes(i) && u > 11) a = .35;
+      n.s.material.color.set(col); n.s.scale.setScalar(sz); n.s.material.opacity = a; });
+    const base = new THREE.Color(0x3b5bdb), hot = new THREE.Color(C.or), teal = new THREE.Color(C.teal), dim = new THREE.Color(0x16224a);
+    KG.edges.forEach((e, i) => setLineColor(kgL.ls, i, u > 11 ? dim : base));
+    if (u > 8.6) seedEdges.forEach(i => i >= 0 && setLineColor(kgL.ls, i, teal));
+    if (u > 10.8) hopEdges[0].forEach(i => i >= 0 && setLineColor(kgL.ls, i, hot));
+    if (u > 12.3) hopEdges[1].forEach(i => i >= 0 && setLineColor(kgL.ls, i, hot));
+    kgL.ls.geometry.attributes.color.needsUpdate = true;
+    const rp = seg(u, 5.8, 7.6); ring.position.set(0, 7.6, 0); ring.scale.setScalar(.5 + rp * 7); setAlpha(ring, rp > 0 && rp < 1 ? 1 - rp : 0);
+    const pr = seg(u, 14, 15.2); setAlpha(prism, pr); setAlpha(prismGlow, pr * .8); setAlpha(llmLabel, pr); prism.rotation.set(t * .6, t * .9, 0);
+    stream.forEach(s => { const q = ((s.userData.ph + (u - 14.5) * .5) % 1 + 1) % 1; s.position.lerpVectors(s.userData.from, prism.position, q); setAlpha(s, seg(u, 14.5, 15) * (1 - seg(u, 18.2, 18.8)) * Math.sin(q * Math.PI)); });
+    setAlpha(ansLabel, seg(u, 16.6, 17.4));
+    warm.position.set(0, 2, 6); warm.intensity = u > 8 ? 70 : 0;
+    const ang = lerp(-.4, .5, ease(seg(u, 0, 19))), z = ease(seg(u, 13.5, 16));
+    camOrbit(lerp(30, 36, z), lerp(6, 10, z), ang, V(0, lerp(3, 7, z), 0));
+  } else if (t < 78) { // fraud galaxy
+    const u = t - 66; setAlpha(fraud, 1); fraud.rotation.y = u * .02;
+    rings.forEach(r => { const on = seg(t, r.userData.t, r.userData.t + .4); setAlpha(r, on); r.scale.setScalar(.3 + on * (1 + .15 * Math.sin(t * 5))); });
+    const z = ease(seg(u, 0, 11.5)), focus = ringFocus.clone().applyAxisAngle(V(0, 1, 0), fraud.rotation.y);
+    const far = V(0, 150, 210), near = focus.clone().add(V(10, 9, 16));
+    cam.position.lerpVectors(far, near, z); cam.lookAt(V(0, 0, 0).lerp(focus, z));
+  } else if (t < 88) { // results
+    const u = t - 78; setAlpha(results, 1);
+    bars.forEach((b, k) => { const p = ease(seg(u, 1 + k * .25, 3.2 + k * .25)), h = Math.max(b.h * p, .01);
+      b.m.scale.y = h; b.m.position.y = -5 + h / 2; b.vl.position.set(b.m.position.x, -5 + h + 1.6, 0); setAlpha(b.vl, seg(u, 2.5 + k * .25, 3.3 + k * .25)); });
+    camOrbit(lerp(38, 33, ease(seg(u, 0, 10))), 5, lerp(-.3, .25, ease(seg(u, 0, 10))), V(0, 0, 0));
+  } else { // end card
+    const u = t - 88; setAlpha(endG, .35 * seg(u, 0, 1)); kgE.g.rotation.y = t * .12; camOrbit(30, 2, t * .05);
+  }
+  overlay(t); renderer.render(scene, cam);
+};
+window.DUR = DUR; window.ready = true;
+if (location.search.includes("play")) { const t0 = performance.now(); const loop = () => { window.renderAt(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); }; loop(); }
+</script></body></html>
