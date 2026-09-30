@@ -1,0 +1,732 @@
+[
+ {
+  "id": "POL-AML-001",
+  "title": "Anti-Money Laundering & Counter-Terrorist Financing Policy",
+  "type": "Policy",
+  "dept": "CMP",
+  "level": 1,
+  "version": "5.2",
+  "effective": "2025-03-01",
+  "file": "POL-AML-001.pdf"
+ },
+ {
+  "id": "POL-KYC-002",
+  "title": "Customer Due Diligence Policy",
+  "type": "Policy",
+  "dept": "CMP",
+  "level": 1,
+  "version": "4.0",
+  "effective": "2024-11-15",
+  "file": "POL-KYC-002.pdf"
+ },
+ {
+  "id": "POL-PRV-001",
+  "title": "Data Privacy Policy",
+  "type": "Policy",
+  "dept": "LGL",
+  "level": 1,
+  "version": "3.1",
+  "effective": "2025-05-20",
+  "file": "POL-PRV-001.pdf"
+ },
+ {
+  "id": "POL-ICT-001",
+  "title": "ICT Risk Management Policy",
+  "type": "Policy",
+  "dept": "ITC",
+  "level": 1,
+  "version": "2.0",
+  "effective": "2025-01-17",
+  "file": "POL-ICT-001.pdf"
+ },
+ {
+  "id": "POL-CYB-002",
+  "title": "Information Security Policy",
+  "type": "Policy",
+  "dept": "ITC",
+  "level": 1,
+  "version": "6.3",
+  "effective": "2025-06-30",
+  "file": "POL-CYB-002.pdf"
+ },
+ {
+  "id": "POL-CRD-001",
+  "title": "Credit Risk Policy",
+  "type": "Policy",
+  "dept": "CRD",
+  "level": 2,
+  "version": "7.1",
+  "effective": "2025-02-10",
+  "file": "POL-CRD-001.pdf"
+ },
+ {
+  "id": "POL-CAP-001",
+  "title": "Capital Adequacy Policy",
+  "type": "Policy",
+  "dept": "RSK",
+  "level": 3,
+  "version": "3.0",
+  "effective": "2025-04-01",
+  "file": "POL-CAP-001.pdf"
+ },
+ {
+  "id": "POL-LIQ-001",
+  "title": "Liquidity Risk Policy",
+  "type": "Policy",
+  "dept": "TRM",
+  "level": 2,
+  "version": "4.2",
+  "effective": "2025-04-01",
+  "file": "POL-LIQ-001.pdf"
+ },
+ {
+  "id": "POL-MKT-001",
+  "title": "Market Risk & Trading Policy",
+  "type": "Policy",
+  "dept": "TRM",
+  "level": 2,
+  "version": "3.4",
+  "effective": "2024-09-01",
+  "file": "POL-MKT-001.pdf"
+ },
+ {
+  "id": "POL-FIN-001",
+  "title": "Financial Reporting Controls Policy",
+  "type": "Policy",
+  "dept": "OPS",
+  "level": 1,
+  "version": "2.2",
+  "effective": "2025-01-01",
+  "file": "POL-FIN-001.pdf"
+ },
+ {
+  "id": "POL-DAT-001",
+  "title": "Risk Data Aggregation Policy",
+  "type": "Policy",
+  "dept": "RSK",
+  "level": 2,
+  "version": "1.3",
+  "effective": "2024-12-01",
+  "file": "POL-DAT-001.pdf"
+ },
+ {
+  "id": "POL-AI-001",
+  "title": "Responsible AI Policy",
+  "type": "Policy",
+  "dept": "ITC",
+  "level": 1,
+  "version": "1.2",
+  "effective": "2026-01-15",
+  "file": "POL-AI-001.pdf"
+ },
+ {
+  "id": "POL-MRM-001",
+  "title": "Model Risk Management Policy",
+  "type": "Policy",
+  "dept": "RSK",
+  "level": 2,
+  "version": "2.1",
+  "effective": "2025-09-01",
+  "file": "POL-MRM-001.pdf"
+ },
+ {
+  "id": "POL-SUI-001",
+  "title": "Suitability & Client Protection Policy",
+  "type": "Policy",
+  "dept": "WLT",
+  "level": 1,
+  "version": "2.0",
+  "effective": "2025-07-01",
+  "file": "POL-SUI-001.pdf"
+ },
+ {
+  "id": "POL-HR-001",
+  "title": "People & Conduct Policy",
+  "type": "Policy",
+  "dept": "HRS",
+  "level": 1,
+  "version": "3.0",
+  "effective": "2025-10-01",
+  "file": "POL-HR-001.pdf"
+ },
+ {
+  "id": "POL-TPR-001",
+  "title": "Third-Party Risk Policy",
+  "type": "Policy",
+  "dept": "OPS",
+  "level": 1,
+  "version": "1.4",
+  "effective": "2025-03-15",
+  "file": "POL-TPR-001.pdf"
+ },
+ {
+  "id": "POL-IAU-001",
+  "title": "Internal Audit Charter",
+  "type": "Policy",
+  "dept": "IAU",
+  "level": 1,
+  "version": "4.0",
+  "effective": "2024-06-01",
+  "file": "POL-IAU-001.pdf"
+ },
+ {
+  "id": "SOP-RET-001",
+  "title": "Retail Account Opening",
+  "type": "Standard Operating Procedure",
+  "dept": "RET",
+  "level": 1,
+  "version": "3.0",
+  "effective": "2021-04-12",
+  "file": "SOP-RET-001.pdf"
+ },
+ {
+  "id": "SOP-RET-002",
+  "title": "Cash Handling & Teller Operations",
+  "type": "Standard Operating Procedure",
+  "dept": "RET",
+  "level": 1,
+  "version": "2.4",
+  "effective": "2023-02-01",
+  "file": "SOP-RET-002.pdf"
+ },
+ {
+  "id": "SOP-CMP-001",
+  "title": "Transaction Monitoring Alert Handling",
+  "type": "Standard Operating Procedure",
+  "dept": "CMP",
+  "level": 3,
+  "version": "3.0",
+  "effective": "2024-05-01",
+  "file": "SOP-CMP-001.pdf"
+ },
+ {
+  "id": "SOP-CMP-002",
+  "title": "Suspicious Activity Reporting",
+  "type": "Standard Operating Procedure",
+  "dept": "CMP",
+  "level": 3,
+  "version": "2.1",
+  "effective": "2024-05-01",
+  "file": "SOP-CMP-002.pdf"
+ },
+ {
+  "id": "SOP-CMP-003",
+  "title": "Enhanced Due Diligence for High-Risk Customers and PEPs",
+  "type": "Standard Operating Procedure",
+  "dept": "CMP",
+  "level": 3,
+  "version": "2.0",
+  "effective": "2024-11-15",
+  "file": "SOP-CMP-003.pdf"
+ },
+ {
+  "id": "SOP-CRD-001",
+  "title": "Commercial Credit Approval",
+  "type": "Standard Operating Procedure",
+  "dept": "CRD",
+  "level": 2,
+  "version": "4.0",
+  "effective": "2022-03-01",
+  "file": "SOP-CRD-001.pdf"
+ },
+ {
+  "id": "SOP-CRD-002",
+  "title": "Retail Credit Scoring & Automated Decisioning",
+  "type": "Standard Operating Procedure",
+  "dept": "CRD",
+  "level": 2,
+  "version": "2.0",
+  "effective": "2025-08-01",
+  "file": "SOP-CRD-002.pdf"
+ },
+ {
+  "id": "SOP-WLT-001",
+  "title": "Client Suitability Assessment",
+  "type": "Standard Operating Procedure",
+  "dept": "WLT",
+  "level": 2,
+  "version": "1.5",
+  "effective": "2025-07-01",
+  "file": "SOP-WLT-001.pdf"
+ },
+ {
+  "id": "SOP-TRM-001",
+  "title": "Daily Liquidity Monitoring",
+  "type": "Standard Operating Procedure",
+  "dept": "TRM",
+  "level": 2,
+  "version": "3.1",
+  "effective": "2024-04-01",
+  "file": "SOP-TRM-001.pdf"
+ },
+ {
+  "id": "SOP-TRM-002",
+  "title": "Trader Limit Breach Escalation",
+  "type": "Standard Operating Procedure",
+  "dept": "TRM",
+  "level": 2,
+  "version": "2.0",
+  "effective": "2024-09-01",
+  "file": "SOP-TRM-002.pdf"
+ },
+ {
+  "id": "SOP-RSK-001",
+  "title": "Enterprise Stress Testing",
+  "type": "Standard Operating Procedure",
+  "dept": "RSK",
+  "level": 3,
+  "version": "2.0",
+  "effective": "2025-04-01",
+  "file": "SOP-RSK-001.pdf"
+ },
+ {
+  "id": "SOP-RSK-002",
+  "title": "Risk Data Lineage & Quality Checks",
+  "type": "Standard Operating Procedure",
+  "dept": "RSK",
+  "level": 2,
+  "version": "1.2",
+  "effective": "2024-12-01",
+  "file": "SOP-RSK-002.pdf"
+ },
+ {
+  "id": "SOP-RSK-003",
+  "title": "Model Validation",
+  "type": "Standard Operating Procedure",
+  "dept": "RSK",
+  "level": 2,
+  "version": "2.0",
+  "effective": "2025-09-01",
+  "file": "SOP-RSK-003.pdf"
+ },
+ {
+  "id": "SOP-ITC-001",
+  "title": "ICT Incident Management & Regulatory Reporting",
+  "type": "Standard Operating Procedure",
+  "dept": "ITC",
+  "level": 0,
+  "version": "2.0",
+  "effective": "2025-01-17",
+  "file": "SOP-ITC-001.pdf"
+ },
+ {
+  "id": "SOP-ITC-002",
+  "title": "Privileged Access Management",
+  "type": "Standard Operating Procedure",
+  "dept": "ITC",
+  "level": 0,
+  "version": "3.0",
+  "effective": "2023-10-01",
+  "file": "SOP-ITC-002.pdf"
+ },
+ {
+  "id": "SOP-ITC-003",
+  "title": "AI Model Deployment & Monitoring",
+  "type": "Standard Operating Procedure",
+  "dept": "ITC",
+  "level": 1,
+  "version": "1.1",
+  "effective": "2026-01-15",
+  "file": "SOP-ITC-003.pdf"
+ },
+ {
+  "id": "SOP-OPS-001",
+  "title": "Payment Processing & Reconciliation",
+  "type": "Standard Operating Procedure",
+  "dept": "OPS",
+  "level": 1,
+  "version": "4.2",
+  "effective": "2024-02-01",
+  "file": "SOP-OPS-001.pdf"
+ },
+ {
+  "id": "SOP-OPS-002",
+  "title": "Vendor Onboarding",
+  "type": "Standard Operating Procedure",
+  "dept": "OPS",
+  "level": 1,
+  "version": "1.3",
+  "effective": "2025-03-15",
+  "file": "SOP-OPS-002.pdf"
+ },
+ {
+  "id": "SOP-HRS-001",
+  "title": "Recruitment & AI-Assisted Screening",
+  "type": "Standard Operating Procedure",
+  "dept": "HRS",
+  "level": 1,
+  "version": "2.0",
+  "effective": "2025-10-01",
+  "file": "SOP-HRS-001.pdf"
+ },
+ {
+  "id": "SOP-LGL-001",
+  "title": "Data Subject Access Requests",
+  "type": "Standard Operating Procedure",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2.0",
+  "effective": "2024-07-01",
+  "file": "SOP-LGL-001.pdf"
+ },
+ {
+  "id": "SOP-IAU-001",
+  "title": "Annual Control Testing",
+  "type": "Standard Operating Procedure",
+  "dept": "IAU",
+  "level": 4,
+  "version": "3.0",
+  "effective": "2024-06-01",
+  "file": "SOP-IAU-001.pdf"
+ },
+ {
+  "id": "SOP-RET-001-V1",
+  "title": "Branch Account Opening (Paper Process)",
+  "type": "Standard Operating Procedure (Retired)",
+  "dept": "RET",
+  "level": 1,
+  "version": "1.0",
+  "effective": "1998-06-01",
+  "file": "SOP-RET-001-V1.pdf"
+ },
+ {
+  "id": "SOP-CRD-001-V1",
+  "title": "Branch Credit Committee Procedure",
+  "type": "Standard Operating Procedure (Retired)",
+  "dept": "CRD",
+  "level": 2,
+  "version": "1.0",
+  "effective": "1987-01-15",
+  "file": "SOP-CRD-001-V1.pdf"
+ },
+ {
+  "id": "SOP-CMP-001-V2",
+  "title": "Manual AML Review of Large Transactions",
+  "type": "Standard Operating Procedure (Retired)",
+  "dept": "CMP",
+  "level": 3,
+  "version": "2.0",
+  "effective": "2012-09-01",
+  "file": "SOP-CMP-001-V2.pdf"
+ },
+ {
+  "id": "SOP-ITC-002-V1",
+  "title": "Administrator Account Procedure",
+  "type": "Standard Operating Procedure (Retired)",
+  "dept": "ITC",
+  "level": 0,
+  "version": "1.0",
+  "effective": "2009-02-01",
+  "file": "SOP-ITC-002-V1.pdf"
+ },
+ {
+  "id": "SOP-OPS-001-V1",
+  "title": "Payment Release Procedure",
+  "type": "Standard Operating Procedure (Retired)",
+  "dept": "OPS",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2004-05-01",
+  "file": "SOP-OPS-001-V1.pdf"
+ },
+ {
+  "id": "SOP-HRS-001-V1",
+  "title": "Recruitment Procedure",
+  "type": "Standard Operating Procedure (Retired)",
+  "dept": "HRS",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2016-01-01",
+  "file": "SOP-HRS-001-V1.pdf"
+ },
+ {
+  "id": "GRD-001",
+  "title": "Segregation of Duties Standard",
+  "type": "Guardrail Standard",
+  "dept": "RSK",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2025-01-01",
+  "file": "GRD-001.pdf"
+ },
+ {
+  "id": "GRD-002",
+  "title": "Maker-Checker Standard",
+  "type": "Guardrail Standard",
+  "dept": "OPS",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2025-01-01",
+  "file": "GRD-002.pdf"
+ },
+ {
+  "id": "GRD-003",
+  "title": "Generative AI Acceptable Use Standard",
+  "type": "Guardrail Standard",
+  "dept": "ITC",
+  "level": 0,
+  "version": "1.0",
+  "effective": "2025-01-01",
+  "file": "GRD-003.pdf"
+ },
+ {
+  "id": "GRD-004",
+  "title": "Data Access & Classification Standard",
+  "type": "Guardrail Standard",
+  "dept": "ITC",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2025-01-01",
+  "file": "GRD-004.pdf"
+ },
+ {
+  "id": "GRD-005",
+  "title": "Human-in-the-Loop Standard for Automated Decisions",
+  "type": "Guardrail Standard",
+  "dept": "RSK",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2025-01-01",
+  "file": "GRD-005.pdf"
+ },
+ {
+  "id": "GRD-006",
+  "title": "Contractor Privileged Access Guardrail",
+  "type": "Guardrail Standard",
+  "dept": "ITC",
+  "level": 0,
+  "version": "1.0",
+  "effective": "2025-01-01",
+  "file": "GRD-006.pdf"
+ },
+ {
+  "id": "KRI-FC",
+  "title": "Financial Crime KRI Framework",
+  "type": "KRI / KPI Framework",
+  "dept": "CMP",
+  "level": 3,
+  "version": "2026.Q2",
+  "effective": "2026-06-30",
+  "file": "KRI-FC.pdf"
+ },
+ {
+  "id": "KRI-IT",
+  "title": "Operational Resilience KPI Framework",
+  "type": "KRI / KPI Framework",
+  "dept": "ITC",
+  "level": 3,
+  "version": "2026.Q2",
+  "effective": "2026-06-30",
+  "file": "KRI-IT.pdf"
+ },
+ {
+  "id": "KRI-AI",
+  "title": "AI & Model Risk KRI Framework",
+  "type": "KRI / KPI Framework",
+  "dept": "RSK",
+  "level": 3,
+  "version": "2026.Q2",
+  "effective": "2026-06-30",
+  "file": "KRI-AI.pdf"
+ },
+ {
+  "id": "KRI-CAP",
+  "title": "Capital, Liquidity & Credit KPI Framework",
+  "type": "KRI / KPI Framework",
+  "dept": "RSK",
+  "level": 4,
+  "version": "2026.Q2",
+  "effective": "2026-06-30",
+  "file": "KRI-CAP.pdf"
+ },
+ {
+  "id": "AR-2025-03",
+  "title": "Audit of AML Transaction Monitoring",
+  "type": "Internal Audit Report",
+  "dept": "IAU",
+  "level": 3,
+  "version": "Final",
+  "effective": "2025-04-28",
+  "file": "AR-2025-03.pdf"
+ },
+ {
+  "id": "AR-2025-07",
+  "title": "Audit of AI Governance",
+  "type": "Internal Audit Report",
+  "dept": "IAU",
+  "level": 4,
+  "version": "Final",
+  "effective": "2025-08-19",
+  "file": "AR-2025-07.pdf"
+ },
+ {
+  "id": "AR-2025-09",
+  "title": "Audit of ICT Resilience (DORA Readiness)",
+  "type": "Internal Audit Report",
+  "dept": "IAU",
+  "level": 4,
+  "version": "Final",
+  "effective": "2025-10-06",
+  "file": "AR-2025-09.pdf"
+ },
+ {
+  "id": "AR-2026-02",
+  "title": "Audit of Privileged Access",
+  "type": "Internal Audit Report",
+  "dept": "IAU",
+  "level": 4,
+  "version": "Final",
+  "effective": "2026-03-12",
+  "file": "AR-2026-02.pdf"
+ },
+ {
+  "id": "AR-2026-04",
+  "title": "Audit of Commercial Credit Process",
+  "type": "Internal Audit Report",
+  "dept": "IAU",
+  "level": 4,
+  "version": "Final",
+  "effective": "2026-05-05",
+  "file": "AR-2026-04.pdf"
+ },
+ {
+  "id": "AR-2026-06",
+  "title": "Audit of Data Privacy Controls",
+  "type": "Internal Audit Report",
+  "dept": "IAU",
+  "level": 4,
+  "version": "Final",
+  "effective": "2026-07-14",
+  "file": "AR-2026-06.pdf"
+ },
+ {
+  "id": "RS-BASEL",
+  "title": "Regulatory Obligation Summary: Basel III/IV",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-BASEL.pdf"
+ },
+ {
+  "id": "RS-AML",
+  "title": "Regulatory Obligation Summary: AML/KYC",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-AML.pdf"
+ },
+ {
+  "id": "RS-GDPR",
+  "title": "Regulatory Obligation Summary: GDPR",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-GDPR.pdf"
+ },
+ {
+  "id": "RS-DORA",
+  "title": "Regulatory Obligation Summary: DORA",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-DORA.pdf"
+ },
+ {
+  "id": "RS-PCI",
+  "title": "Regulatory Obligation Summary: PCI-DSS",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-PCI.pdf"
+ },
+ {
+  "id": "RS-SOX",
+  "title": "Regulatory Obligation Summary: SOX",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-SOX.pdf"
+ },
+ {
+  "id": "RS-BCBS239",
+  "title": "Regulatory Obligation Summary: BCBS 239",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-BCBS239.pdf"
+ },
+ {
+  "id": "RS-EUAI",
+  "title": "Regulatory Obligation Summary: EU AI Act",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-EUAI.pdf"
+ },
+ {
+  "id": "RS-MIFID",
+  "title": "Regulatory Obligation Summary: MiFID II",
+  "type": "Regulatory Summary",
+  "dept": "LGL",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-10",
+  "file": "RS-MIFID.pdf"
+ },
+ {
+  "id": "RCN-2026-01",
+  "title": "EU AI Act: High-Risk AI Obligations",
+  "type": "Regulatory Change Notice",
+  "dept": "LGL",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2026-02-02",
+  "file": "RCN-2026-01.pdf"
+ },
+ {
+  "id": "RCN-2026-02",
+  "title": "DORA: Threat-Led Penetration Testing",
+  "type": "Regulatory Change Notice",
+  "dept": "LGL",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2026-04-20",
+  "file": "RCN-2026-02.pdf"
+ },
+ {
+  "id": "HIS-001",
+  "title": "Cortex Bank: A Century of Banking (1926-2026)",
+  "type": "Corporate History",
+  "dept": "LGL",
+  "level": 1,
+  "version": "1.0",
+  "effective": "2026-01-01",
+  "file": "HIS-001.pdf"
+ },
+ {
+  "id": "ORG-001",
+  "title": "Organisation & Department Mandates",
+  "type": "Organisation Chart",
+  "dept": "HRS",
+  "level": 1,
+  "version": "2026.1",
+  "effective": "2026-01-01",
+  "file": "ORG-001.pdf"
+ }
+]
