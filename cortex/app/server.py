@@ -146,7 +146,8 @@ async def ask(request: Request, x_session: str = Header(None)):
     try:
         res = answer(q, mode, role, provider, api_key, graph_name)
     except Exception as e:  # provider errors: bad key, rate limit, safety block
-        raise HTTPException(502, f"The model provider returned an error: {type(e).__name__}. Check the key or try again.")
+        detail = str(e).replace(api_key or "\0", "***").replace(os.getenv("GOOGLE_API_KEY") or "\0", "***")[:180]
+        raise HTTPException(502, f"The model provider returned an error: {type(e).__name__}: {detail}")
     if not byok and not res.get("answer"):  # nothing was generated: refund the shared quota
         with LOCK:
             s["asked"] -= 1

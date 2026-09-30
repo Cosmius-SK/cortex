@@ -9,7 +9,8 @@ import time
 
 from core.retrieval import entity_ids, graph_context, vector_context
 
-GEMINI_MODEL = os.getenv("CORTEX_GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("CORTEX_GEMINI_MODEL")  # unset: pick the newest available Flash model automatically
+_GEMINI_PICK = {}
 CLAUDE_MODEL = "claude-sonnet-5-5"
 # USD per 1M tokens (input, output). Gemini free tier costs $0; set CORTEX_GEMINI_PRICE="in,out" to show a paid equivalent.
 PRICES = {"claude": (2.00, 10.00),
@@ -20,12 +21,30 @@ SYSTEM = ("You are Cortex, the knowledge assistant of Cortex Bank. Answer ONLY f
           "If the context does not contain the answer, say so plainly. Be concise.")
 
 
+def gemini_model(api_key):
+    """Newest text Flash model this key can use (model names change over time; this avoids hard-coding one)."""
+    if GEMINI_MODEL:
+        return GEMINI_MODEL
+    if api_key not in _GEMINI_PICK:
+        import re
+        from google import genai
+        names = []
+        for m in genai.Client(api_key=api_key).models.list():
+            name = (m.name or "").removeprefix("models/")
+            if "generateContent" in (m.supported_actions or []) and "flash" in name and not re.search(
+                    r"lite|image|tts|audio|live|thinking|exp|preview|embed|8b", name):
+                names.append(name)
+        ver = lambda n: [int(x) for x in re.findall(r"\d+", n)]
+        _GEMINI_PICK[api_key] = max(names, key=ver) if names else "gemini-flash-latest"
+    return _GEMINI_PICK[api_key]
+
+
 def chat_model(provider, api_key):
     if provider == "claude":
         from langchain_anthropic import ChatAnthropic
         return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key, max_tokens=2048, timeout=60)
     from langchain_google_genai import ChatGoogleGenerativeAI
-    return ChatGoogleGenerativeAI(model=GEMINI_MODEL, google_api_key=api_key, temperature=0, timeout=60)
+    return ChatGoogleGenerativeAI(model=gemini_model(api_key), google_api_key=api_key, temperature=0, timeout=60)
 
 
 def answer(question, mode="graph", role=None, provider="gemini", api_key=None, graph_name="cortex_kg"):
@@ -48,7 +67,8 @@ def answer(question, mode="graph", role=None, provider="gemini", api_key=None, g
     tin, tout = usage.get("input_tokens", 0), usage.get("output_tokens", 0)
     pin, pout = PRICES.get(provider, (0, 0))
     ctx_ids, cited = set(entity_ids(ctx["context"])), set(entity_ids(text))
-    return {**result, "answer": text, "llm_ms": round((time.perf_counter() - t1) * 1000),
+    model = getattr(llm, "model", None) or getattr(llm, "model_name", None)
+    return {**result, "answer": text, "model": str(model).removeprefix("models/"), "llm_ms": round((time.perf_counter() - t1) * 1000),
             "tokenomics": {"input_tokens": tin, "output_tokens": tout,
                            "cost_usd": round(tin / 1e6 * pin + tout / 1e6 * pout, 6),
                            "context_ids": len(ctx_ids), "cited_ids": len(cited & ctx_ids),

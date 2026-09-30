@@ -37,7 +37,7 @@ Optional environment variables:
 |---|---|
 | `GOOGLE_API_KEY` | Shared Gemini key (free tier) for the demo |
 | `CORTEX_ACCESS_PIN` | PIN testers enter to use the shared key |
-| `CORTEX_GEMINI_MODEL` | Gemini model name (default `gemini-2.5-flash`) |
+| `CORTEX_GEMINI_MODEL` | Gemini model name (default: newest Flash model available to the key, discovered automatically) |
 | `CORTEX_OPS_SCALE` | Operational graph size (1.0 = ~1M nodes; auto-sized from RAM when unset) |
 | `FALKOR_HOST` / `FALKOR_PORT` | Use an existing FalkorDB server instead of the embedded one |
 
