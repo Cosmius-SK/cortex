@@ -1,0 +1,41 @@
+name: Deploy Cortex to Hugging Face Space
+
+on:
+  push:
+    branches: [main, claude/ai-news-aggregation-8bi0ya]
+    paths: ["cortex/**", ".github/workflows/deploy-cortex-space.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: cortex-space
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip when HF_TOKEN is not configured
+        if: env.HF_TOKEN == ''
+        run: echo "::notice::Deployment skipped. Add a Hugging Face write token as the repository secret HF_TOKEN."
+
+      - name: Push cortex/ to the Space
+        if: env.HF_TOKEN != ''
+        env:
+          SPACE: sk-aiu/cortex
+        run: |
+          set -e
+          git lfs install
+          rm -rf /tmp/space && mkdir /tmp/space
+          rsync -a --exclude data/ --exclude '__pycache__/' --exclude '.venv/' cortex/ /tmp/space/
+          cd /tmp/space
+          git init -q -b main
+          git lfs track "*.pdf" "*.png" "*.jpg"
+          git config user.name "cortex-deploy"
+          git config user.email "cortex-deploy@users.noreply.github.com"
+          git add .gitattributes && git add -A
+          git commit -q -m "Deploy ${GITHUB_SHA::7} from ${GITHUB_REF_NAME}"
+          git push -f "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE}" main

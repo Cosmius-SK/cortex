@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cortex · Graph Intelligence</title>
+<link rel="icon" href="/static/logo.svg">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+<style>
+:root{--navy:#0B1B3A;--blue:#1E3A8A;--or:#F97316;--teal:#0EA5A4;--red:#DC2626;--amber:#D97706;--ink:#0f172a;--sub:#475569;--line:#e2e8f0;--bg:#f8fafc;--card:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+a{color:var(--blue)}button{font:inherit;cursor:pointer}
+header{background:var(--navy);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header img{width:34px;height:34px;background:#fff;border-radius:8px;padding:2px}
+.brand b{font-size:18px;letter-spacing:.08em}.brand small{display:block;color:#fb923c;font-size:10px;letter-spacing:.2em}
+.hdr-right{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select,input,textarea{font:inherit;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;color:var(--ink)}
+header select{border:0}
+.pill{background:rgba(255,255,255,.12);padding:5px 10px;border-radius:999px;font-size:12px;white-space:nowrap}
+.btn{background:var(--or);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:600}
+.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn:disabled{opacity:.5;cursor:default}
+.banner{background:#fff7ed;color:#9a3412;padding:7px 20px;font-size:12px;border-bottom:1px solid #fed7aa}
+nav{display:flex;gap:4px;padding:0 20px;background:#fff;border-bottom:1px solid var(--line);overflow-x:auto}
+nav button{border:0;background:none;padding:12px 14px;color:var(--sub);font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:var(--navy);border-color:var(--or)}
+main{max-width:1250px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+h1{font-size:28px;margin:0 0 6px}h2{font-size:18px;margin:0 0 10px}h3{font-size:15px;margin:0 0 8px}
+.sub{color:var(--sub)}.muted{color:#94a3b8;font-size:12px}
+.grid{display:grid;gap:14px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:860px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.stat{font-size:30px;font-weight:800;color:var(--navy)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;font-size:12px}
+.chip:hover{border-color:var(--or)}
+.id{display:inline-block;background:#eef2ff;color:var(--blue);border-radius:6px;padding:0 5px;font-size:12px;font-weight:600;text-decoration:none}
+.ans{line-height:1.55;white-space:normal}.ans ul{padding-left:18px;margin:6px 0}
+.tok{display:flex;flex-wrap:wrap;gap:10px;background:#f1f5f9;border-radius:10px;padding:8px 10px;font-size:12px;margin-top:10px}
+.tok b{color:var(--navy)}
+.tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}.t-g{background:#ccfbf1;color:#115e59}.t-a{background:#fef3c7;color:#92400e}.t-r{background:#fee2e2;color:#991b1b}.t-n{background:#e2e8f0;color:#334155}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--sub);font-weight:600}
+pre{background:#0b1b3a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:auto;font-size:12px}
+#cy{height:460px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.overlay{position:fixed;inset:0;background:rgba(11,27,58,.92);color:#fff;display:flex;align-items:center;justify-content:center;z-index:20;text-align:center;padding:20px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:15;padding:16px}
+.modal .card{max-width:560px;width:100%}
+.err{color:var(--red);font-size:13px}.ok{color:#047857;font-size:13px}
+.drop{border:2px dashed #cbd5e1;border-radius:14px;padding:26px;text-align:center;background:#fff}
+.bar{height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden}.bar>i{display:block;height:100%}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--or);border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="warm" class="overlay"><div><img src="/static/logo.svg" width="80"><h1 style="margin-top:14px">Cortex is warming up</h1>
+<p id="warmPhase" class="sub" style="color:#cbd5e1">Starting...</p><p class="muted">First visit after idle: 1-3 minutes while FalkorDB loads 1M+ nodes and 73 documents.</p></div></div>
+
+<header>
+  <img src="/static/logo.svg" alt="">
+  <div class="brand"><b>CORTEX</b><small>GRAPH INTELLIGENCE</small></div>
+  <div class="hdr-right">
+    <span class="pill">Role: <select id="role" title="Role impersonation (simulation, not authentication)"></select></span>
+    <span class="pill" id="quota">PIN: locked</span>
+    <span class="pill" id="spend">Session: 0 tokens · $0.0000</span>
+    <button class="btn ghost" onclick="openSettings()">Settings</button>
+  </div>
+</header>
+<div class="banner">100% synthetic data (Cortex Bank is fictional). Never enter or upload real customer or confidential data. <a href="#" onclick="tab('limits');return false">Limits &amp; fair use</a></div>
+<nav id="nav"></nav>
+<main>
+
+<section data-tab="overview">
+  <div class="card">
+    <h1>Why FalkorDB for AI engagements, and more</h1>
+    <p class="sub">RAG finds <b>similar text</b>. Real questions need <b>connected facts</b>. Cortex turns 73 bank documents into a knowledge graph in FalkorDB and answers the same questions two ways: plain vector RAG and GraphRAG. Then it shows what else the graph can do.</p>
+    <div class="chips" style="margin-top:10px">
+      <button class="btn" onclick="tab('ask')">Ask Cortex</button>
+      <button class="btn ghost" onclick="tab('scenarios');run('impact')">Regulatory impact</button>
+      <button class="btn ghost" onclick="tab('scenarios');run('fraud')">Fraud rings</button>
+      <button class="btn ghost" onclick="tab('upload')">Upload your PDF</button>
+    </div>
+  </div>
+  <div class="grid g4" id="tiles"></div>
+  <div class="card"><h3>How it works</h3>
+    <pre>PDF ─► LangChain loader ─► chunks ─┬─► local embeddings ─► FalkorDB vector index      (what RAG does today)
+                                   └─► entity + relationship extraction ─► FalkorDB graph   (what Cortex adds)
+Question ─► role filter (graph-native access control) ─► Vector RAG  vs  GraphRAG ─► LLM ─► answer + evidence + tokenomics</pre>
+  </div>
+</section>
+
+<section data-tab="ask" class="hidden">
+  <div class="card">
+    <h2>Ask Cortex</h2>
+    <div class="grid" style="grid-template-columns:1fr auto;align-items:start">
+      <textarea id="q" rows="2" maxlength="500" placeholder="e.g. Which controls, procedures and open audit findings are affected by the EU AI Act?"></textarea>
+      <button class="btn" id="askBtn" onclick="ask()">Ask</button>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0">
+      <label><input type="radio" name="cmp" value="modes" checked> Vector RAG vs GraphRAG</label>
+      <label><input type="radio" name="cmp" value="roles"> Compare two roles</label>
+      <span id="role2wrap" class="hidden">vs <select id="role2"></select></span>
+      <span class="muted" id="qcount">0 / 500</span>
+      <span class="muted" id="askGraph"></span>
+    </div>
+    <div class="chips" id="samples"></div>
+    <p id="askErr" class="err"></p>
+  </div>
+  <div class="grid g2" id="answers"></div>
+</section>
+
+<section data-tab="scenarios" class="hidden">
+  <div class="card"><h2>One-click scenarios</h2><p class="sub">Pure Cypher on FalkorDB: no LLM, no tokens, $0. Results respect the selected role.</p>
+    <div class="chips">
+      <span>Regulation <select id="reg"></select></span>
+      <button class="btn ghost" onclick="run('impact')">1 · Regulatory impact</button>
+      <button class="btn ghost" onclick="run('fraud')">5 · Fraud rings</button>
+      <button class="btn ghost" onclick="run('rollup')">6 · Risk roll-up</button>
+      <button class="btn ghost" onclick="run('versions')">7 · Version history</button>
+      <button class="btn ghost" onclick="run('perf')">8 · Performance</button>
+      <button class="btn ghost" onclick="run('graph')">Graph explorer</button>
+    </div>
+  </div>
+  <div id="scOut"></div>
+  <div class="card hidden" id="cyCard"><h3>Graph explorer <span class="muted">click a node to expand</span></h3><div id="cy"></div></div>
+</section>
+
+<section data-tab="upload" class="hidden">
+  <div class="card"><h2>Upload your own PDF</h2>
+    <p class="sub">Your PDF goes into a <b>private sandbox graph</b>, one isolated FalkorDB graph per session. It is <b>wiped 24 hours after upload</b> (or at the 4-hour idle reset).</p>
+    <div class="drop"><input type="file" id="file" accept="application/pdf"><p class="muted">PDF only · max 5 MB · max 20 pages · text-based (no scans) · max 3 uploads per session · synthetic/public content only</p>
+    <button class="btn" onclick="upload()">Ingest into sandbox</button> <span id="upMsg"></span></div>
+  </div>
+  <div class="card"><h3>Your sandboxes</h3><div id="sandboxes" class="sub">None yet.</div></div>
+</section>
+
+<section data-tab="engineer" class="hidden">
+  <div class="card"><h2>Engineer view</h2><p class="sub">Everything behind the answers: Cypher, pipeline, measurements. Source: <a href="https://github.com/Cosmius-SK/AI/tree/main/cortex" target="_blank">GitHub</a>.</p></div>
+  <div class="grid g2">
+    <div class="card"><h3>Last queries</h3><div id="lastCypher" class="sub">Ask a question to see the retrieval Cypher.</div></div>
+    <div class="card"><h3>Pipeline facts</h3><table>
+      <tr><td>Documents</td><td>73 synthetic PDFs (policies, SOPs, guardrails, KRIs, audits, regulations)</td></tr>
+      <tr><td>Loader / splitter</td><td>LangChain PyPDFLoader · RecursiveCharacterTextSplitter (900 / 120)</td></tr>
+      <tr><td>Embeddings</td><td>BAAI/bge-base-en-v1.5 (768-d), local CPU, $0</td></tr>
+      <tr><td>Extraction</td><td>Pattern extraction for bank IDs (0 tokens): 295/295 relationships vs answer key · LLM structured extraction for uploads</td></tr>
+      <tr><td>Access control</td><td>(Role)-[:CAN_ACCESS]->(Document), applied before retrieval</td></tr>
+      <tr><td>LLM</td><td>Gemini (free tier, shared) or your own Gemini / Claude Sonnet 5.5 key</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<section data-tab="limits" class="hidden">
+  <div class="card"><h2>Limits &amp; fair use</h2><p class="sub">Nothing is limited silently. These rules apply to everyone.</p><div id="limitsTbl"></div></div>
+</section>
+</main>
+
+<div class="modal" id="settings"><div class="card">
+  <h2>Settings</h2>
+  <h3>Shared free model (Gemini)</h3>
+  <p class="sub">Enter the Access PIN shared by the demo owner. Valid for 8 hours. 5 wrong attempts = 15-minute lockout.</p>
+  <div style="display:flex;gap:8px"><input id="pin" type="password" inputmode="numeric" placeholder="Access PIN"><button class="btn" onclick="unlock()">Unlock</button></div>
+  <p id="pinMsg"></p>
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <h3>Your own key (BYOK)</h3>
+  <p class="sub">Encrypted <b>on this device</b> with your personal PIN (AES-GCM). Sent to the model provider only when you ask, never stored or logged on the server. Use a key with a spending limit.</p>
+  <div class="grid g2">
+    <select id="prov"><option value="gemini">Google Gemini</option><option value="claude">Claude Sonnet 5.5</option></select>
+    <input id="bkPin" type="password" placeholder="Personal PIN (4+ digits)">
+  </div>
+  <input id="bk" type="password" placeholder="Paste API key" style="width:100%;margin-top:8px">
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+    <button class="btn" onclick="saveKey()">Encrypt &amp; save</button>
+    <button class="btn ghost" onclick="unlockKey()">Unlock saved key</button>
+    <button class="btn ghost" onclick="forgetKey()">Forget key</button>
+  </div>
+  <p id="bkMsg"></p>
+  <div style="text-align:right"><button class="btn ghost" onclick="closeSettings()">Close</button></div>
+</div></div>
+
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const TABS = [["overview","Overview"],["ask","Ask Cortex"],["scenarios","Scenarios"],["upload","Upload"],["engineer","Engineer view"],["limits","Limits"]];
+const SAMPLES = [
+  "Which controls, procedures and open audit findings are affected by the EU AI Act?",
+  "What must happen before a high-risk AI model is deployed?",
+  "Which KRIs are in breach and which controls do they measure?",
+  "Which procedure replaced the 1987 branch credit committee and what controls does it use?",
+  "Who must approve a relationship with a politically exposed person?",
+  "What are the open high-severity audit findings and who owns them?",
+  "Which policies implement DORA and which systems are in scope?",
+  "How quickly must a major ICT incident be reported to the regulator?"];
+let S = {sid:null, key:null, provider:"gemini", tokens:0, cost:0, graph:"cortex_kg", last:[]};
+
+async function api(path, opts={}) {
+  opts.headers = Object.assign({"X-Session": S.sid}, opts.headers||{});
+  const r = await fetch(path, opts); let j = {};
+  try { j = await r.json(); } catch(e) {}
+  if (r.status === 401 && path !== "/api/session") { await newSession(); return api(path, opts); }
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+async function newSession(){ const j = await (await fetch("/api/session",{method:"POST"})).json(); S.sid = j.session; sessionStorage.setItem("sid", S.sid); }
+const esc = t => (t||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const idlink = t => t.replace(/\b((?:REG|POL|SOP|CTL|SYS|RSK|GRD|KRI|AF|AR|RCN|RS|HIS|ORG)-[A-Z0-9-]+)\b/g, m => `<a class="id" href="#" onclick="explore('${m}');return false">${m}</a>`);
+function md(t){ let h = esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
+  h = h.split("\n").map(l => /^\s*[-*•] /.test(l) ? "<li>"+l.replace(/^\s*[-*•] /,"")+"</li>" : l+"<br>").join("").replace(/(<li>.*?<\/li>)+/g, m=>"<ul>"+m+"</ul>");
+  return idlink(h.replace(/\[(?=<a)|(?<=<\/a>)\]/g,"")); }
+function statusTag(s){ const c = {Green:"t-g",Amber:"t-a",Breach:"t-r",High:"t-r",Medium:"t-a",Low:"t-g",Open:"t-a",Overdue:"t-r",Closed:"t-g"}[s]||"t-n"; return `<span class="tag ${c}">${s||"n/a"}</span>`; }
+
+function tab(name){ $$("section").forEach(s => s.classList.toggle("hidden", s.dataset.tab!==name)); $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.t===name)); if(name==="limits") limits(); if(name==="upload") refreshMe(); }
+
+async function init(){
+  $("#nav").innerHTML = TABS.map(([t,l]) => `<button data-t="${t}" onclick="tab('${t}')">${l}</button>`).join(""); tab("overview");
+  S.sid = sessionStorage.getItem("sid"); if(!S.sid) await newSession();
+  const roles = await (await fetch("/api/roles")).json();
+  const opts = roles.map(r => `<option value="${r.id}">${r.name} (L${r.clearance})</option>`).join("");
+  $("#role").innerHTML = opts; $("#role2").innerHTML = opts; $("#role").value = "ROLE-CRO"; $("#role2").value = "ROLE-TELLER";
+  $("#reg").innerHTML = ["REG-EUAI","REG-DORA","REG-AML","REG-GDPR","REG-BASEL","REG-PCI","REG-SOX","REG-BCBS239","REG-MIFID"].map(r=>`<option>${r}</option>`).join("");
+  $("#samples").innerHTML = SAMPLES.map(q => `<button class="chip" onclick="$('#q').value=this.textContent;count();ask()">${q}</button>`).join("");
+  $$("input[name=cmp]").forEach(r => r.onchange = () => $("#role2wrap").classList.toggle("hidden", cmp()!=="roles"));
+  $("#q").oninput = count; $("#role").onchange = () => { const c = $("#cyCard"); if(!c.classList.contains("hidden")) run("graph"); };
+  if (localStorage.getItem("cortex_bk")) $("#bkMsg").innerHTML = '<span class="muted">A saved key exists: unlock it with your personal PIN.</span>';
+  warm();
+}
+const cmp = () => $("input[name=cmp]:checked").value;
+const count = () => $("#qcount").textContent = `${$("#q").value.length} / 500`;
+
+async function warm(){
+  const st = await (await fetch("/api/status")).json(); $("#warmPhase").textContent = st.phase;
+  if(!st.ready){ setTimeout(warm, 2500); return; }
+  $("#warm").classList.add("hidden"); refreshMe(); tiles();
+}
+async function tiles(){
+  try { const p = await api("/api/scenario/perf");
+    const t = [["73","synthetic bank PDFs"],[p.graph_sizes.cortex_kg.toLocaleString(),"knowledge-graph nodes"],[p.graph_sizes.cortex_ops.toLocaleString(),"operational nodes"],[p.queries.find(q=>q.query.startsWith("Regulatory")).median_ms+" ms","regulatory impact query"]];
+    $("#tiles").innerHTML = t.map(([n,l]) => `<div class="card"><div class="stat">${n}</div><div class="sub">${l}</div></div>`).join("");
+  } catch(e){}
+}
+async function refreshMe(){
+  try { const m = await api("/api/me"); showQuota(m);
+    $("#sandboxes").innerHTML = m.sandboxes.length ? m.sandboxes.map(s => `<div style="margin:6px 0"><b>${esc(s.title)}</b> · wipes in <span data-exp="${s.expires}"></span> <button class="chip" onclick="useSandbox('${s.graph}','${esc(s.title)}')">Ask about it</button></div>`).join("") + `<button class="chip" onclick="useSandbox('cortex_kg')">Back to Cortex Bank documents</button>` : "None yet.";
+    ticker();
+  } catch(e){}
+}
+function ticker(){ $$("[data-exp]").forEach(e => { const s = Math.max(0, e.dataset.exp - Date.now()/1000); e.textContent = `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m`; }); }
+setInterval(ticker, 30000);
+function showQuota(q){ $("#quota").textContent = S.key ? `Own key (${S.provider})` : q.pin_active ? `Shared: ${q.limit - q.asked} of ${q.limit} left today` : "PIN: locked"; }
+
+// ---------- ask ----------
+async function one(question, mode, role){
+  const body = {question, mode, role, graph: S.graph, provider: S.provider, api_key: S.key};
+  return api("/api/ask", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
+}
+async function ask(){
+  const q = $("#q").value.trim(); $("#askErr").textContent = ""; if(!q) return;
+  const role = $("#role").value, jobs = cmp()==="roles" ? [["graph",role],["graph",$("#role2").value]] : [["vector",role],["graph",role]];
+  const titles = cmp()==="roles" ? jobs.map(j => "GraphRAG · as " + roleName(j[1])) : ["Vector RAG (today)", "GraphRAG on FalkorDB"];
+  $("#answers").innerHTML = titles.map(t => `<div class="card"><h3>${t}</h3><span class="spin"></span></div>`).join("");
+  $("#askBtn").disabled = true; S.last = [];
+  const cards = $$("#answers .card");
+  await Promise.all(jobs.map(async ([mode, r], i) => {
+    try { const a = await one(q, mode, r); S.last.push(a); cards[i].innerHTML = render(a, titles[i]); if(a.quota) showQuota(a.quota);
+      if(!a.cached && a.tokenomics){ S.tokens += a.tokenomics.input_tokens + a.tokenomics.output_tokens; S.cost += a.tokenomics.cost_usd; }
+      $("#spend").textContent = `Session: ${S.tokens.toLocaleString()} tokens · $${S.cost.toFixed(4)}`;
+    } catch(e){ cards[i].innerHTML = `<h3>${titles[i]}</h3><p class="err">${esc(e.message)}</p>`; if(/PIN|key/.test(e.message)) openSettings(); }
+  }));
+  $("#askBtn").disabled = false;
+  $("#lastCypher").innerHTML = S.last.map(a => `<p><b>${a.mode === "graph" ? "GraphRAG" : "Vector RAG"}</b> · retrieval ${a.retrieval_ms} ms · ${a.facts.length} graph facts</p><pre>${esc(a.cypher)}</pre>`).join("");
+}
+const roleName = id => ($("#role").querySelector(`option[value="${id}"]`)||{}).textContent || id;
+function render(a, title){
+  const t = a.tokenomics || {};
+  const tok = a.tokenomics ? `<div class="tok"><span>In <b>${t.input_tokens.toLocaleString()}</b></span><span>Out <b>${t.output_tokens.toLocaleString()}</b></span><span>Cost <b>$${t.cost_usd.toFixed(5)}</b></span><span>Cited <b>${t.cited_ids}/${t.context_ids}</b> IDs in context (${Math.round(t.context_efficiency*100)}%)</span><span>LLM <b>${a.llm_ms} ms</b></span><span>Retrieval <b>${a.retrieval_ms} ms</b></span></div>` : "";
+  return `<h3>${title} ${a.cached ? '<span class="tag t-n">cached · $0</span>' : ""}</h3>
+    <p class="muted">Answered as: <b>${roleName(a.role)}</b>${a.withheld ? ` · ${a.withheld} source(s) withheld for this role` : ""}</p>
+    <div class="ans">${a.answer ? md(a.answer) : `<p class="err">${esc(a.error||"No answer")}</p>`}</div>${tok}
+    <p class="muted" style="margin-top:8px">Sources: ${a.sources.map(s => `<a class="id" href="/pdfs/${s}.pdf" target="_blank">${s}</a>`).join(" ")}</p>`;
+}
+function useSandbox(g, title){ S.graph = g; $("#askGraph").textContent = g === "cortex_kg" ? "" : `Asking: sandbox "${title}"`; tab("ask"); }
+
+// ---------- scenarios ----------
+async function run(name){
+  $("#cyCard").classList.toggle("hidden", name!=="graph");
+  if(name==="graph"){ $("#scOut").innerHTML = ""; explore("POL-AI-001"); return; }
+  $("#scOut").innerHTML = `<div class="card"><span class="spin"></span> Running...</div>`;
+  try { const r = await api(`/api/scenario/${name}?role=${$("#role").value}&reg=${$("#reg").value}`); $("#scOut").innerHTML = SC[name](r); }
+  catch(e){ $("#scOut").innerHTML = `<div class="card err">${esc(e.message)}</div>`; }
+}
+const cy = r => `<details><summary class="muted">Cypher (${r.ms} ms)</summary><pre>${esc(r.cypher)}</pre></details>`;
+const SC = {
+  impact: r => `<div class="card"><h2>What does ${r.regulation} touch? <span class="tag t-g">${r.ms} ms</span></h2><p class="sub">As ${roleName($("#role").value)}. Regulation → policies → controls → procedures → departments → KRIs → audit findings, in one query.</p>
+    ${r.policies.length ? `<table><tr><th>Policy</th><th>Controls</th><th>Procedures</th><th>Departments</th><th>KRIs</th><th>Findings</th></tr>${r.policies.map(p=>`<tr><td>${idlink(p.policy)}<br><span class="muted">${esc(p.title)}</span></td><td>${idlink(p.controls.join(", "))}</td><td>${idlink(p.sops.join(", "))}</td><td>${p.departments.join(", ")}</td><td>${idlink(p.kris.join(", ")||"–")}</td><td>${idlink(p.findings.join(", ")||"–")}</td></tr>`).join("")}</table>` : '<p class="sub">No visible policies for this role.</p>'}${cy(r)}</div>`,
+  fraud: r => r.denied ? `<div class="card"><h2>Fraud rings</h2><p class="err">${r.message}</p></div>` :
+    `<div class="card"><h2>${r.total} fraud rings found across ${r.graph_nodes.toLocaleString()} nodes <span class="tag t-g">${(r.ms/1000).toFixed(1)} s</span></h2>
+    ${r.score ? `<p>Planted: <b>${r.score.planted}</b> · detected: <b>${r.score.detected}</b> · false alarms: <b>${r.score.false_alarms}</b> · recall <b>${Math.round(r.score.recall*100)}%</b></p>` : ""}
+    <p class="sub">Pattern: 5+ customers sharing one device, moving money between each other in amounts just under 10,000 (structuring).</p>
+    <table><tr><th>Shared device</th><th>Customers</th><th>Suspicious transfers</th></tr>${r.rings.map(x=>`<tr><td>${x.device}</td><td>${x.customers.join(", ")}</td><td>${x.suspicious_transfers}</td></tr>`).join("")}</table>${cy(r)}</div>`,
+  rollup: r => r.note ? `<div class="card"><h2>Risk roll-up</h2><p class="sub">${r.note}</p></div>` :
+    `<div class="card"><h2>Bank-wide risk score: ${r.bank_score}/100</h2><p class="sub">Controls → KRIs → frameworks → bank. Green 100, Amber 60, Breach 20.</p>
+    ${r.frameworks.map(f=>`<h3 style="margin-top:14px">${f.title} · ${f.score}/100</h3><div class="bar"><i style="width:${f.score}%;background:${f.score>=80?'var(--teal)':f.score>=50?'var(--amber)':'var(--red)'}"></i></div>
+    <table><tr><th>KRI</th><th>Status</th><th>Current / target</th><th>Controls</th><th>Audit findings</th></tr>${f.kris.map(k=>`<tr><td>${idlink(k.id)} ${esc(k.name)}</td><td>${statusTag(k.status)}</td><td>${k.current} / ${k.target}</td><td>${idlink(k.controls.join(", "))}</td><td>${idlink(k.findings.join(", ")||"–")}</td></tr>`).join("")}</table>`).join("")}${cy(r)}</div>`,
+  versions: r => `<div class="card"><h2>Version history (lineage)</h2><table><tr><th>Retired</th><th>In force</th><th>Replaced by</th></tr>${r.chains.map(c=>`<tr><td>${idlink(c.retired.id)} ${esc(c.retired.title)}</td><td>${c.retired.effective}</td><td>${idlink(c.current.id)} ${esc(c.current.title)} (v${c.current.version}, ${c.current.effective})</td></tr>`).join("")}</table>${cy(r)}</div>`,
+  perf: r => `<div class="card"><h2>Performance panel</h2><p class="sub">${r.note} Graph sizes: ${Object.entries(r.graph_sizes).map(([k,v])=>`${k} ${v.toLocaleString()} nodes`).join(" · ")}.</p><table><tr><th>Query</th><th>Graph</th><th>Median</th></tr>${r.queries.map(q=>`<tr><td>${q.query}<details><summary class="muted">Cypher</summary><pre>${esc(q.cypher)}</pre></details></td><td>${q.graph}</td><td><b>${q.median_ms} ms</b></td></tr>`).join("")}</table></div>`,
+};
+let CY = null; const KC = {Regulation:"#F97316",Policy:"#1E3A8A",SOP:"#0EA5A4",Control:"#7C3AED",Risk:"#DC2626",System:"#475569",Guardrail:"#D97706",KRI:"#DB2777",Finding:"#B91C1C",Document:"#0B1B3A"};
+async function explore(id){
+  tab("scenarios"); $("#cyCard").classList.remove("hidden");
+  const g = await api(`/api/scenario/graph?center=${encodeURIComponent(id)}&role=${$("#role").value}`);
+  const els = [...g.nodes.map(n=>({data:{id:n.id,label:`${n.id}\n${(n.label||"").slice(0,32)}`,c:KC[n.kind]||"#64748b"}})),...g.edges.map((e,i)=>({data:{id:"e"+i+e.source+e.target,source:e.source,target:e.target,label:e.rel}}))];
+  if(!CY){ CY = cytoscape({container:$("#cy"),style:[{selector:"node",style:{"background-color":"data(c)",label:"data(label)","font-size":8,"text-wrap":"wrap","text-valign":"bottom",color:"#0f172a",width:18,height:18}},{selector:"edge",style:{width:1,"line-color":"#cbd5e1","target-arrow-shape":"triangle","target-arrow-color":"#cbd5e1","curve-style":"bezier",label:"data(label)","font-size":6,color:"#94a3b8"}}]});
+    CY.on("tap","node",e=>explore(e.target.id())); }
+  CY.elements().remove(); CY.add(els); CY.layout({name:"cose",animate:false}).run();
+  if(!g.nodes.length) $("#scOut").innerHTML = `<div class="card sub">${id} is not visible to this role.</div>`;
+}
+
+// ---------- upload ----------
+async function upload(){
+  const f = $("#file").files[0]; if(!f) return; $("#upMsg").innerHTML = '<span class="spin"></span> Ingesting...';
+  const fd = new FormData(); fd.append("file", f); fd.append("provider", S.provider); fd.append("api_key", S.key || "");
+  try { const r = await api("/api/upload", {method:"POST", body: fd});
+    S.graph = r.graph;
+    $("#upMsg").innerHTML = `<span class="ok">Done: ${r.pages} pages. ${esc(r.note)} Questions now go to this sandbox.</span>`;
+    $("#askGraph").textContent = `Asking: sandbox "${r.title}"`; refreshMe();
+  } catch(e){ $("#upMsg").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+}
+
+// ---------- settings: PIN + encrypted BYOK ----------
+function openSettings(){ $("#settings").style.display = "flex"; } function closeSettings(){ $("#settings").style.display = "none"; }
+async function unlock(){
+  const fd = new FormData(); fd.append("pin", $("#pin").value);
+  try { const r = await api("/api/unlock", {method:"POST", body: fd}); $("#pinMsg").innerHTML = `<span class="ok">Unlocked for ${r.valid_hours} hours.</span>`; $("#pin").value=""; refreshMe(); }
+  catch(e){ $("#pinMsg").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+}
+const enc = new TextEncoder(), dec = new TextDecoder();
+async function aesKey(pin, salt){ const base = await crypto.subtle.importKey("raw", enc.encode(pin), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:250000, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]); }
+const b64 = b => btoa(String.fromCharCode(...new Uint8Array(b))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function saveKey(){
+  const pin = $("#bkPin").value, key = $("#bk").value.trim(); if(pin.length < 4 || !key){ $("#bkMsg").innerHTML = '<span class="err">Enter a key and a PIN of 4+ digits.</span>'; return; }
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, await aesKey(pin, salt), enc.encode(key));
+  try { localStorage.setItem("cortex_bk", JSON.stringify({p:$("#prov").value, s:b64(salt), i:b64(iv), c:b64(ct)})); } catch(e){}
+  S.key = key; S.provider = $("#prov").value; $("#bk").value = ""; $("#bkPin").value = "";
+  $("#bkMsg").innerHTML = '<span class="ok">Key encrypted on this device and active for this session.</span>'; refreshMe();
+}
+async function unlockKey(){
+  let rec; try { rec = JSON.parse(localStorage.getItem("cortex_bk")); } catch(e){}
+  if(!rec){ $("#bkMsg").innerHTML = '<span class="err">No saved key.</span>'; return; }
+  try { const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:unb64(rec.i)}, await aesKey($("#bkPin").value, unb64(rec.s)), unb64(rec.c));
+    S.key = dec.decode(pt); S.provider = rec.p; $("#bkPin").value = ""; $("#bkMsg").innerHTML = '<span class="ok">Key unlocked for this session.</span>'; refreshMe();
+  } catch(e){ $("#bkMsg").innerHTML = '<span class="err">Wrong PIN.</span>'; }
+}
+function forgetKey(){ try { localStorage.removeItem("cortex_bk"); } catch(e){} S.key = null; S.provider = "gemini"; $("#bkMsg").innerHTML = '<span class="ok">Key removed from this device.</span>'; refreshMe(); }
+
+async function limits(){
+  const L = await (await fetch("/api/limits")).json();
+  const rows = [["Sandbox graphs",`Deleted ${L.sandbox_ttl_hours} hours after upload, or at the ${L.idle_reset_hours}-hour idle reset`,"Countdown on each sandbox"],
+    ["Uploads",`PDF only, max ${L.upload_max_mb} MB, max ${L.upload_max_pages} pages, text-based, max ${L.uploads_per_session} per session`,"Upload box"],
+    ["Shared free LLM",`${L.questions_per_session_per_day} questions per session per day, ${L.questions_per_day_total} per day in total. Your own key: no app limit`,"Header counter"],
+    ["Access PIN",`Unlocks the shared model for ${L.pin_session_hours} hours. ${L.pin_max_failures} wrong attempts = ${L.pin_lockout_minutes}-minute lockout`,"Settings"],
+    ["Your own key","Encrypted in your browser with your PIN (AES-GCM). Never stored or logged on the server","Settings"],
+    ["Questions",`Max ${L.question_max_chars} characters`,"Under the input box"],
+    ["Queries","All Cypher is fixed and read-only; the LLM never writes to the database","Engineer view"],
+    ["Role impersonation","A simulation of access control, not authentication","Role selector"],
+    ["Data","100% synthetic. Never upload real customer or confidential data","Banner"],
+    ["Idle reset",`After ${L.idle_reset_hours} hours without activity, sessions, sandboxes and PIN sessions are cleared`,"This page"],
+    ["Scripted questions","Answers are cached after the first run: $0 and instant for everyone after","'cached' tag"],
+    ["Logging","No keys, PINs or uploaded content are logged","This page"]];
+  $("#limitsTbl").innerHTML = `<table><tr><th>Area</th><th>Rule</th><th>Where you see it</th></tr>${rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td class="muted">${r[2]}</td></tr>`).join("")}</table>`;
+}
+init();
+</script>
+</body>
+</html>

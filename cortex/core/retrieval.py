@@ -136,12 +136,14 @@ def graph_context(question, role=None, graph_name=KG, k=4, max_facts=120):
 
 IMPACT_CYPHER = """MATCH (reg:Entity {id:$reg})<-[:IMPLEMENTS]-(p:Document)
 OPTIONAL MATCH (p)-[:HAS_CONTROL]->(c:Entity)
+WITH p, collect(DISTINCT c.id) AS ctls
 OPTIONAL MATCH (s:Document)-[:IMPLEMENTS]->(p)
 OPTIONAL MATCH (s)-[:OWNED_BY]->(dep:Department)
-OPTIONAL MATCH (k:Entity)-[:MEASURES]->(c)
-OPTIONAL MATCH (f:Entity)-[:RAISED_ON]->(c)
-RETURN p.id, p.title, collect(DISTINCT c.id), collect(DISTINCT s.id), collect(DISTINCT dep.name),
-       collect(DISTINCT k.id), collect(DISTINCT f.id)"""
+WITH p, ctls, collect(DISTINCT [s.id, dep.name]) AS sops
+OPTIONAL MATCH (p)-[:HAS_CONTROL]->(:Entity)<-[:MEASURES]-(k:Entity)
+WITH p, ctls, sops, collect(DISTINCT k.id) AS kris
+OPTIONAL MATCH (p)-[:HAS_CONTROL]->(:Entity)<-[:RAISED_ON]-(f:Entity)
+RETURN p.id, p.title, ctls, sops, kris, collect(DISTINCT f.id)"""
 
 
 def impact(reg_id, role=None):
@@ -151,11 +153,12 @@ def impact(reg_id, role=None):
     rows = g.query(IMPACT_CYPHER, {"reg": reg_id}).result_set
     ms = (time.perf_counter() - t) * 1000
     out = []
-    for pid, title, ctls, sops, depts, kris, findings in rows:
+    for pid, title, ctls, sop_depts, kris, findings in rows:
         if not visible(pid, allowed):
             continue
-        out.append({"policy": pid, "title": title, "controls": ctls, "sops": [s for s in sops if visible(s, allowed)],
-                    "departments": depts, "kris": [k for k in kris if visible(k, allowed)],
+        sops = [(s, d) for s, d in sop_depts if s and visible(s, allowed)]
+        out.append({"policy": pid, "title": title, "controls": ctls, "sops": sorted({s for s, _ in sops}),
+                    "departments": sorted({d for _, d in sops if d}), "kris": [k for k in kris if visible(k, allowed)],
                     "findings": [f for f in findings if visible(f, allowed)]})
     return {"regulation": reg_id, "policies": out, "ms": round(ms, 1), "cypher": IMPACT_CYPHER}
 

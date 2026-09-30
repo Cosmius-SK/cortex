@@ -1,0 +1,18 @@
+# Runtime (Hugging Face Space, Python 3.12). gradio comes from sdk_version in README.md.
+falkordblite==0.10.0
+falkordb==1.7.1
+falkordb-bulk-loader==1.2.0
+fastembed==0.8.1
+langchain==1.4.3
+langchain-core==1.6.6
+langchain-community==0.4.2
+langchain-text-splitters==1.1.2
+langchain-google-genai==4.4.0
+langchain-anthropic==1.7.5
+pypdf==6.19.0
+fastapi==0.142.1
+uvicorn==0.54.0
+python-multipart==0.0.32
+psutil==7.2.2
+spaces==0.51.3
+# Build-time only (regenerate the PDFs): reportlab==5.0.1

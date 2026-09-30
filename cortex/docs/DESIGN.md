@@ -144,6 +144,17 @@ Every answer shows its token economics, and the evaluation reports them in aggre
 A running session total ("You've used X tokens ≈ $Y") appears in the header.
 
 ## 9. Architecture & Hosting
+
+> **Build notes (v0.3 implementation):**
+> - **Hosting changed:** Docker Spaces are paid on this account, so Cortex runs as a **Gradio-SDK Space on ZeroGPU (free)**.
+>   `app.py` serves the FastAPI app on port 7860. FalkorDB runs **embedded**, using the redis-server and FalkorDB module
+>   shipped in the `falkordblite` package. The fallback, if the Space image can't run it, is the FalkorDB Cloud free tier.
+> - **Deploy:** a GitHub Action (`.github/workflows/deploy-cortex-space.yml`) pushes `cortex/` to `sk-aiu/cortex`.
+> - **Extraction:** bank PDFs use pattern extraction (0 tokens; 295/295 relationships correct against the answer key).
+>   Uploads use LLM structured extraction.
+> - **No LLM-written Cypher in v1:** all Cypher is fixed and read-only, which is stricter than §11's rule.
+> - **Operational graph size** is chosen automatically from available RAM (≥12 GB: ~1M nodes; ≥6 GB: 50%; otherwise 20%).
+
 ```
       Hugging Face Docker Space (free, 16 GB RAM, 2 vCPU, port 7860)
  ┌─────────────────────────────────────────────────────────────┐
