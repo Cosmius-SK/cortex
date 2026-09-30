@@ -29,7 +29,8 @@ with gr.Blocks(title="Cortex status") as demo:
 if __name__ == "__main__":
     start_background()
     threading.Thread(target=housekeeping, daemon=True).start()
-    demo.launch(server_name="0.0.0.0", server_port=int(os.getenv("PORT", "7860")), prevent_thread_lock=True)
+    # ssr_mode=False: on Spaces, Gradio SSR puts a Node server in front of 7860, which would hide the Cortex routes.
+    demo.launch(server_name="0.0.0.0", server_port=int(os.getenv("PORT", "7860")), ssr_mode=False, prevent_thread_lock=True)
     # Cortex routes take priority over Gradio's (the Gradio page itself is not used).
     demo.app.router.routes[0:0] = list(api.router.routes)
     demo.block_thread()
