@@ -194,7 +194,7 @@ async function api(path, opts={}) {
   const r = await fetch(path, opts); let j = {};
   try { j = await r.json(); } catch(e) {}
   if (r.status === 401 && path !== "/api/session") { await newSession(); return api(path, opts); }
-  if (!r.ok) throw new Error(j.error || r.statusText);
+  if (!r.ok) throw new Error(j.error || j.detail || r.statusText);
   return j;
 }
 async function newSession(){ const j = await (await fetch("/api/session",{method:"POST"})).json(); S.sid = j.session; sessionStorage.setItem("sid", S.sid); }
