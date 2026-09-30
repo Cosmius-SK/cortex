@@ -23,8 +23,9 @@
 1. **Engineer view → Pipeline:** LangChain loader and splitter, local embeddings, and pattern extraction (295/295 relationships correct, 0 tokens).
 2. **Last queries:** the exact Cypher for vector and GraphRAG retrieval.
 3. **Performance panel:** FalkorDB execution times on the 1M-node graph.
-4. **Upload:** drop a PDF and ask about it. It goes into a private sandbox graph that's wiped after 24 hours.
-5. **Code:** `github.com/Cosmius-SK/AI/tree/main/cortex`. No Docker needed: `python app.py` runs it all locally.
+4. **X-Ray:** every layer of the stack with its source file, live FalkorDB internals (version, memory, graphs, labels, indexes), real GRAPH.EXPLAIN / GRAPH.PROFILE plans, and the life of a question with timings.
+5. **Upload:** drop a PDF and ask about it. It goes into a private sandbox graph that's wiped after 24 hours.
+6. **Code:** `github.com/Cosmius-SK/AI/tree/main/cortex`. No Docker needed: `python app.py` runs it all locally.
 
 ## Likely questions
 | Question | Answer |

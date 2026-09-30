@@ -171,6 +171,30 @@ def scenario(name: str, role: str = "ROLE-CRO", reg: str = "REG-EUAI", center: s
     return fn()
 
 
+# ---------- X-Ray: live FalkorDB internals (read-only, free) ----------
+XRAY = {"t": 0, "data": None}
+
+
+@app.get("/api/xray")
+def xray_overview(x_session: str = Header(None)):
+    ready()
+    session(x_session)
+    from core import xray
+    if time.time() - XRAY["t"] > 60:  # counting 4.8M edges per type is cheap, but not per click
+        XRAY.update(t=time.time(), data=xray.overview())
+    return XRAY["data"]
+
+
+@app.get("/api/xray/plan/{name}")
+def xray_plan(name: str, x_session: str = Header(None)):
+    ready()
+    session(x_session)
+    from core import xray
+    if name not in xray.PLAN_QUERIES:
+        raise HTTPException(404, "Unknown query.")
+    return xray.plan(name)
+
+
 # ---------- evaluation (shared model, PIN required, max once per 6 hours) ----------
 EVAL = {"status": None, "result": None, "started": 0}
 _EVAL_FILE = ROOT / "eval" / "results.json"

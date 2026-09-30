@@ -47,6 +47,18 @@ pre{background:#0b1b3a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:au
 .drop{border:2px dashed #cbd5e1;border-radius:14px;padding:26px;text-align:center;background:#fff}
 .bar{height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden}.bar>i{display:block;height:100%}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--or);border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
+.xl{display:grid;grid-template-columns:190px 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px;background:#fff}
+.xl>div:first-child{background:#f1f5f9;padding:12px;font-weight:700;color:var(--navy);font-size:13px}.xl>div:first-child small{display:block;font-weight:500;color:var(--sub);margin-top:3px}
+.xl>div:last-child{padding:10px 12px;font-size:13px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.xl.hero{border:2px solid var(--or)}.xl.hero>div:first-child{background:#fff7ed;color:#9a3412}
+.box{border:1px solid var(--line);border-radius:8px;padding:5px 9px;background:#fff}.box b{color:var(--navy)}.hero .box{border-color:#fdba74;background:#fffbf5}
+.file{font-family:ui-monospace,monospace;font-size:11px;color:var(--sub)}
+@media(max-width:860px){.xl{grid-template-columns:1fr}}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media(max-width:860px){.steps{grid-template-columns:1fr 1fr}}
+.step{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12.5px;background:#fff}.step .n{font-size:11px;font-weight:800;color:var(--or)}.step b{display:block;color:var(--navy);margin:2px 0}.step .m{font-weight:700;color:var(--teal);margin-top:4px}
+.step.fk{border-color:#fdba74;background:#fffbf5}
+.why{font-size:13px}.why b{color:var(--navy)}
+pre.plan .op{color:#fdba74;font-weight:700}pre.plan .met{color:#5eead4}
 .hidden{display:none!important}
 </style>
 </head>
@@ -148,6 +160,38 @@ Question ─► role filter (graph-native access control) ─► Vector RAG  vs 
   <div class="card"><h3>4 · Performance</h3><button class="btn ghost" onclick="tab('scenarios');run('perf')">Run the performance panel</button></div>
 </section>
 
+<section data-tab="xray" class="hidden">
+  <div class="card"><h2>X-Ray: what's inside Cortex</h2>
+    <p class="sub">Every layer of the running system, top to bottom, with the file that implements it. FalkorDB is the one engine underneath: graph, vector search and access control in a single in-memory store.</p>
+    <div style="margin-top:12px">
+      <div class="xl"><div>Browser<small>what testers see</small></div><div><span class="box">Single-page UI (HTML + JS)</span><span class="box">Cytoscape.js graph explorer</span><span class="box">Own API keys encrypted in the browser (WebCrypto AES-GCM)</span><span class="file">app/static/index.html</span></div></div>
+      <div class="xl"><div>Hosting<small>free tier</small></div><div><span class="box">Hugging Face Space (Gradio SDK, ZeroGPU, CPU)</span><span class="box">GitHub Actions deploys on push</span><span class="file">app.py · .github/workflows/deploy-cortex-space.yml</span></div></div>
+      <div class="xl"><div>API &amp; guardrails<small>FastAPI</small></div><div><span class="box">Sessions, Access PIN, quotas</span><span class="box">Answer cache</span><span class="box">Role impersonation</span><span class="box">24 h sandbox wipe · 4 h idle reset</span><span class="file">app/server.py</span></div></div>
+      <div class="xl"><div>AI orchestration<small>LangChain</small></div><div><span class="box">PyPDFLoader + RecursiveCharacterTextSplitter (900/120)</span><span class="box">Local embeddings: bge-base-en-v1.5, 768-d, $0</span><span class="box">Gemini (free, auto-selected with fallback) or Claude</span><span class="box">ID-pattern extraction (0 tokens)</span><span class="file">ingest/pipeline.py · core/llm.py · core/embeddings.py</span></div></div>
+      <div class="xl hero"><div>FalkorDB<small>the hero: one engine</small></div><div id="xrEngine"><span class="spin"></span></div></div>
+      <div class="xl"><div>Data<small>100% synthetic</small></div><div><span class="box">73 bank PDFs (reportlab)</span><span class="box">1M-node operational graph, loaded with falkordb-bulk-insert</span><span class="box">Answer key for evaluation</span><span class="file">generator/ · content/bank.py</span></div></div>
+    </div>
+  </div>
+
+  <div class="card"><h3>1 · Inside the engine, live</h3><p class="sub">Read from the running FalkorDB right now (refreshes every minute). Nothing here is hard-coded.</p>
+    <div id="xrLive"><span class="spin"></span></div></div>
+
+  <div class="card"><h3>2 · Why FalkorDB is fast: how it stores a graph</h3>
+    <div class="grid g2 why" style="margin-top:8px">
+      <div><b>Sparse matrices, not pointer chasing.</b> Each relationship type is stored as a sparse adjacency matrix (GraphBLAS). A multi-hop traversal becomes matrix multiplication, which is why 2-hop GraphRAG expansion and fraud-ring detection stay in milliseconds.</div>
+      <div><b>Graph + vector in one engine.</b> Chunk embeddings live on graph nodes with an HNSW vector index. Vector search and graph expansion run in the same query language, in the same process, with no second database to sync.</div>
+      <div><b>Many graphs, one instance.</b> The bank knowledge graph, the 1M-node operational graph and every tester's upload sandbox are separate graphs in one server. A sandbox wipe is one GRAPH.DELETE.</div>
+      <div><b>In-memory and embeddable.</b> FalkorDB is a Redis module. Here it runs embedded inside the Space container: no managed database, no network hop, $0. It speaks OpenCypher, so queries read like Neo4j's.</div>
+    </div></div>
+
+  <div class="card"><h3>3 · Execution plans: watch FalkorDB run a query</h3>
+    <p class="sub">GRAPH.EXPLAIN shows the compiled plan; GRAPH.PROFILE runs it and reports records and time for every operator. Read bottom-up.</p>
+    <div class="chips" id="xrPlans" style="margin:8px 0"></div><div id="xrPlan"></div></div>
+
+  <div class="card"><h3>4 · Life of a question</h3><p class="sub" id="xrLifeSub">What happens between pressing Ask and seeing the answer. Ask a question on the Ask Cortex tab to fill in the real timings.</p>
+    <div class="steps" id="xrLife"></div></div>
+</section>
+
 <section data-tab="limits" class="hidden">
   <div class="card"><h2>Limits &amp; fair use</h2><p class="sub">Nothing is limited silently. These rules apply to everyone.</p><div id="limitsTbl"></div></div>
 </section>
@@ -178,7 +222,7 @@ Question ─► role filter (graph-native access control) ─► Vector RAG  vs 
 
 <script>
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const TABS = [["overview","Overview"],["ask","Ask Cortex"],["scenarios","Scenarios"],["upload","Upload"],["engineer","Engineer view"],["limits","Limits"]];
+const TABS = [["overview","Overview"],["ask","Ask Cortex"],["scenarios","Scenarios"],["upload","Upload"],["engineer","Engineer view"],["xray","X-Ray"],["limits","Limits"]];
 const SAMPLES = [
   "Which controls, procedures and open audit findings are affected by the EU AI Act?",
   "What must happen before a high-risk AI model is deployed?",
@@ -208,7 +252,7 @@ function md(t){ let h = esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
   return idlink(h).replace(/\[\s*(?=<a class="id")/g,"").replace(/(<\/a>)\s*\]/g,"$1"); }
 function statusTag(s){ const c = {Green:"t-g",Amber:"t-a",Breach:"t-r",High:"t-r",Medium:"t-a",Low:"t-g",Open:"t-a",Overdue:"t-r",Closed:"t-g"}[s]||"t-n"; return `<span class="tag ${c}">${s||"n/a"}</span>`; }
 
-function tab(name){ $$("section").forEach(s => s.classList.toggle("hidden", s.dataset.tab!==name)); $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.t===name)); if(name==="limits") limits(); if(name==="upload") refreshMe(); if(name==="engineer") showEval(); }
+function tab(name){ $$("section").forEach(s => s.classList.toggle("hidden", s.dataset.tab!==name)); $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.t===name)); if(name==="limits") limits(); if(name==="upload") refreshMe(); if(name==="engineer") showEval(); if(name==="xray") xray(); }
 async function runEval(){ try { const r = await api("/api/eval", {method:"POST"}); $("#evalMsg").textContent = r.message; setTimeout(showEval, 5000); } catch(e){ $("#evalMsg").textContent = e.message; } }
 async function showEval(){
   try { const r = await api("/api/eval"); $("#evalMsg").textContent = r.status || "";
@@ -296,6 +340,48 @@ function render(a, title){
 function useSandbox(g, title){ S.graph = g; $("#askGraph").textContent = g === "cortex_kg" ? "" : `Asking: sandbox "${title}"`; tab("ask"); }
 
 // ---------- scenarios ----------
+// ---------- X-Ray ----------
+const PLANS = [["graphrag","GraphRAG retrieval"],["vector","Vector search"],["impact","Regulatory impact"],["fraud","Fraud rings (1M nodes)"]];
+const n0 = x => (x ?? 0).toLocaleString();
+async function xray(){
+  $("#xrPlans").innerHTML = PLANS.map(([k,l]) => `<button class="chip" onclick="xrPlan('${k}')">${l}</button>`).join("");
+  xrLife();
+  try { const r = await api("/api/xray"), e = r.engine, c = r.config;
+    const tot = r.graphs.reduce((a,g) => [a[0]+g.nodes, a[1]+g.edges], [0,0]);
+    $("#xrEngine").innerHTML = `<span class="box"><b>FalkorDB ${esc(e.falkordb)}</b> module in Redis ${esc(e.redis)}</span><span class="box">OpenCypher query engine</span><span class="box">GraphBLAS sparse matrices</span><span class="box">HNSW vector index</span><span class="box">Range indexes</span><span class="box"><b>${r.graphs.length + r.sandboxes}</b> graphs live</span><span class="box"><b>${n0(tot[0])}</b> nodes · <b>${n0(tot[1])}</b> relationships</span><span class="file">core/graph.py · app/bootstrap.py</span>`;
+    const tiles = [["FalkorDB", e.falkordb], ["Memory in use", e.memory], ["Query threads", c.THREAD_COUNT], ["Uptime", e.uptime_min + " min"], ["Graphs", r.graphs.length + " + " + r.sandboxes + " sandbox" + (r.sandboxes===1?"":"es")], ["Introspection", r.introspection_ms + " ms"]];
+    const mem = m => m && m.total_graph_sz_mb != null ? (m.total_graph_sz_mb ? m.total_graph_sz_mb + " MB" : "< 1 MB") : "n/a";
+    const pills = o => Object.entries(o).sort((a,b) => b[1]-a[1]).map(([k,v]) => `<span class="box">${esc(k)} <b>${n0(v)}</b></span>`).join(" ");
+    $("#xrLive").innerHTML = `<div class="grid g3" style="margin-bottom:12px">${tiles.map(([l,v]) => `<div class="card" style="margin:0;padding:12px"><div class="stat" style="font-size:22px">${esc(String(v))}</div><div class="muted">${l}</div></div>`).join("")}</div>` +
+      r.graphs.map(g => `<h3 style="margin-top:14px">${esc(g.name)} <span class="muted">${g.name==="cortex_kg" ? "knowledge graph from the PDFs" : "operational graph: customers, accounts, devices, transfers"} · ${n0(g.nodes)} nodes · ${n0(g.edges)} relationships · graph memory ${mem(g.memory)}</span></h3>
+        <table><tr><th style="width:130px">Node labels</th><td><div class="chips">${pills(g.labels)}</div></td></tr>
+        <tr><th>Relationships</th><td><div class="chips">${pills(g.relationships)}</div></td></tr>
+        <tr><th>Indexes</th><td><div class="chips">${g.indexes.map(i => `<span class="box">:${esc(i.label)}(${i.properties.map(p => esc(p) + " <span class='muted'>" + esc((i.types[p]||[]).join("/")) + "</span>").join(", ")})</span>`).join(" ")}</div></td></tr></table>`).join("");
+  } catch(e){ $("#xrLive").innerHTML = `<p class="err">${esc(e.message)}</p>`; $("#xrEngine").textContent = "FalkorDB (live details unavailable)"; }
+}
+async function xrPlan(k){
+  $("#xrPlan").innerHTML = '<span class="spin"></span> Profiling...';
+  try { const p = await api("/api/xray/plan/" + k);
+    const hl = t => esc(t).replace(/^(\s*)([A-Za-z ]+?)(?= \||$)/gm, '$1<span class="op">$2</span>').replace(/(Records produced: [\d,]+, Execution time: [\d.]+ ms)/g, '<span class="met">$1</span>');
+    $("#xrPlan").innerHTML = `<p><b>${esc(p.title)}</b> · graph <code>${esc(p.graph)}</code> · profiled in ${p.ms} ms (round trip)</p>
+      <pre>${esc(p.cypher)}</pre><p class="muted">Parameters: ${esc(JSON.stringify(p.params))}</p>
+      <div class="grid g2"><div><h3>GRAPH.EXPLAIN (plan)</h3><pre class="plan">${hl(p.explain)}</pre></div><div><h3>GRAPH.PROFILE (actual run)</h3><pre class="plan">${hl(p.profile)}</pre></div></div>`;
+  } catch(e){ $("#xrPlan").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+function xrLife(){
+  const a = (S.last || []).filter(Boolean).find(x => x.mode === "graph") || null, t = a && a.tokenomics;
+  const st = [
+    ["Access check", "Role → CAN_ACCESS → documents. Restricted sources are dropped before retrieval.", a && a.withheld != null ? a.withheld + " withheld" : "", 1],
+    ["Embed the question", "Local bge-base model turns the question into a 768-d vector. No API call, $0.", "", 0],
+    ["Vector search", "db.idx.vector.queryNodes finds the closest chunks via the HNSW index.", "", 1],
+    ["Find seed entities", "IDs in the question plus entities the top chunks MENTION become graph seeds.", "", 1],
+    ["Graph expansion", "One Cypher query walks up to 2 hops: policy → control → procedure → finding.", a ? `${a.facts.length} facts · retrieval ${a.retrieval_ms} ms` : "", 1],
+    ["Assemble context", "Chunks + graph facts + source list, all role-filtered.", a ? `${(a.sources||[]).length} sources` : "", 0],
+    ["LLM answers", "LangChain calls Gemini (or your Claude/Gemini key) with the context.", a && a.llm_ms ? `${esc(a.model||"")} · ${a.llm_ms} ms` : (a && a.cached ? "cached: 0 ms" : ""), 0],
+    ["Tokenomics", "Tokens and cost are counted and shown with every answer.", t ? `${n0(t.input_tokens + t.output_tokens)} tokens · $${t.cost_usd.toFixed(4)}` : "", 0]];
+  $("#xrLife").innerHTML = st.map(([h,d,m,fk],i) => `<div class="step ${fk?"fk":""}"><div class="n">STEP ${i+1}${fk?" · FALKORDB":""}</div><b>${h}</b>${d}${m?`<div class="m">${m}</div>`:""}</div>`).join("");
+  if(a) $("#xrLifeSub").textContent = "Real timings from your last GraphRAG answer. Orange steps run inside FalkorDB.";
+}
 async function run(name){
   $("#cyCard").classList.toggle("hidden", name!=="graph");
   if(name==="graph"){ $("#scOut").innerHTML = ""; explore("POL-AI-001"); return; }
