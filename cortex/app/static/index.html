@@ -58,7 +58,7 @@ pre{background:#0b1b3a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:au
 .step{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12.5px;background:#fff}.step .n{font-size:11px;font-weight:800;color:var(--or)}.step b{display:block;color:var(--navy);margin:2px 0}.step .m{font-weight:700;color:var(--teal);margin-top:4px}
 .step.fk{border-color:#fdba74;background:#fffbf5}
 .why{font-size:13px}.why b{color:var(--navy)}
-pre.plan .op{color:#fdba74;font-weight:700}pre.plan .met{color:#5eead4}
+pre.plan{white-space:pre;overflow-x:auto;word-break:normal}pre.plan .op{color:#fdba74;font-weight:700}pre.plan .met{color:#5eead4}
 .hidden{display:none!important}
 </style>
 </head>
@@ -365,7 +365,7 @@ async function xrPlan(k){
     const hl = t => esc(t).replace(/^(\s*)([A-Za-z ]+?)(?= \||$)/gm, '$1<span class="op">$2</span>').replace(/(Records produced: [\d,]+, Execution time: [\d.]+ ms)/g, '<span class="met">$1</span>');
     $("#xrPlan").innerHTML = `<p><b>${esc(p.title)}</b> · graph <code>${esc(p.graph)}</code> · profiled in ${p.ms} ms (round trip)</p>
       <pre>${esc(p.cypher)}</pre><p class="muted">Parameters: ${esc(JSON.stringify(p.params))}</p>
-      <div class="grid g2"><div><h3>GRAPH.EXPLAIN (plan)</h3><pre class="plan">${hl(p.explain)}</pre></div><div><h3>GRAPH.PROFILE (actual run)</h3><pre class="plan">${hl(p.profile)}</pre></div></div>`;
+      <h3>GRAPH.EXPLAIN (compiled plan)</h3><pre class="plan">${hl(p.explain)}</pre><h3>GRAPH.PROFILE (actual run: records and time per operator)</h3><pre class="plan">${hl(p.profile)}</pre>`;
   } catch(e){ $("#xrPlan").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
 }
 function xrLife(){
