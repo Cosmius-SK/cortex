@@ -189,11 +189,12 @@ const SAMPLES = [
   "How quickly must a major ICT incident be reported to the regulator?"];
 let S = {sid:null, key:null, provider:"gemini", tokens:0, cost:0, graph:"cortex_kg", last:[]};
 
-async function api(path, opts={}) {
-  opts.headers = Object.assign({"X-Session": S.sid}, opts.headers||{});
-  const r = await fetch(path, opts); let j = {};
+async function api(path, opts={}, retried=false) {
+  // The session header is always the current one (a server restart invalidates old sessions).
+  const req = Object.assign({}, opts, {headers: Object.assign({}, opts.headers||{}, {"X-Session": S.sid})});
+  const r = await fetch(path, req); let j = {};
   try { j = await r.json(); } catch(e) {}
-  if (r.status === 401 && path !== "/api/session") { await newSession(); return api(path, opts); }
+  if (r.status === 401 && !retried) { await newSession(); return api(path, opts, true); }
   if (!r.ok) throw new Error(j.error || j.detail || r.statusText);
   return j;
 }
