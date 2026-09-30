@@ -1,7 +1,8 @@
 # Cortex: Why FalkorDB for AI Engagements, and More (Design v0.2)
 
-> Status: **DRAFT for review** · 2026-09-30 · Working name "Cortex" (final name TBD)
-> v0.2 replaces v0.1. The Neo4j comparison is dropped, PDF ingestion is added, the LLM is free by default, and there's a new PDF upload feature.
+> Status: **DRAFT v0.3 for review** · 2026-09-30 · Name: **Cortex** (confirmed)
+> v0.2: Neo4j comparison dropped, PDF ingestion added, free LLM by default, PDF upload feature added.
+> v0.3: role impersonation, tokenomics, PIN-protected keys, a consolidated "Limits & Restrictions" section, 4h idle reset, branding.
 
 ## 1. Goal
 Show, with evidence people can test themselves, why **FalkorDB** is the right foundation for AI
@@ -14,7 +15,7 @@ engagements, and what it adds beyond RAG.
 - **The data:** "Cortex Bank", a synthetic bank founded in 1926, with 12 departments.
 - **Audience:** executives (the story and the impact) and engineers (how it works and whether it reproduces).
 - **Access:** a public URL that people use on their own. No presenter or laptop needs to be available.
-- **Format:** hybrid, a live walkthrough plus a recorded backup video.
+- **Format:** hybrid, a live walkthrough plus a recorded backup video. The video will be made once the build is nearly finished.
 - **Timeline:** 2 days.
 
 **Out of scope for now:** the Neo4j comparison (it can go in a later write-up if needed) and hosting on AWS (see §13).
@@ -81,21 +82,41 @@ with fraud rings planted in the data and labelled with the right answers.
 | Embeddings | Small open-source model running locally on CPU | — |
 
 - Switching providers is a single setting (LangChain chat-model interface).
-- **Tester's own key ("BYO key"):** entered in the settings panel, used only for that browser session, never
-  stored or logged. The page tells testers that the key passes through the Space's backend and suggests they use
-  a key with a low spending limit.
+- **Keys are protected by PINs** (details in §11):
+  - **Owner's Gemini key:** LLM features only unlock after entering an **Access PIN** that the owner shares with testers.
+  - **Tester's own key (BYOK):** protected by a **personal PIN** the tester chooses.
 
 ## 7. Demo Scenarios
 | # | Scenario | What it proves |
 |---|---|---|
 | 1 | **Regulatory impact:** "An EU AI Act amendment lands. What's affected?" | Following 4–6 links through the graph: regulation → policies → controls → SOPs → teams → KPIs |
 | 2 | **Side by side:** the same question answered by plain RAG and by GraphRAG, each showing its sources | Better answers on questions that need several hops or several documents |
-| 3 | **Guardrail-aware assistant:** answers change depending on the asker's role and clearance | Access control built into the graph |
+| 3 | **Role impersonation:** the tester picks a role (see §7.1) and asks the same question; a **compare mode** shows two roles side by side | Access control and guardrails built into the graph |
 | 4 | **Upload your own PDF:** see it turn into a graph and ask questions about it | Real ingestion, plus isolated graphs per session |
 | 5 | **Fraud rings** across ~1M records | The "and more": graph analytics beyond RAG |
 | 6 | **Risk roll-up:** one control → department KRI → a bank-wide score | Aggregating up a hierarchy |
 | 7 | **Version history:** which SOP replaced which, and why | Lineage |
 | 8 | **Performance panel:** response times for these queries on the 1M-node graph | Speed at a realistic scale |
+
+### 7.1 Role Impersonation
+Testers choose who they are, and the same question gets different answers depending on what that role is allowed to see.
+Access is decided by graph paths (`Role -[:CAN_ACCESS]-> Policy/System`, `Guardrail -[:APPLIES_TO]-> Role`) and
+enforced **before** retrieval, so the LLM never sees content the role isn't allowed to see.
+
+| Role | Clearance | Sees |
+|---|---|---|
+| Branch Teller | L1 | Retail SOPs, customer-facing policies |
+| Relationship Manager (Wealth) | L2 | Plus client suitability, wealth products |
+| Credit Analyst | L2 | Plus credit policy, limits, risk ratings |
+| Compliance Officer (AML/KYC) | L3 | Plus AML typologies, fraud-ring alerts, SAR procedures |
+| Chief Risk Officer | L4 | Everything, including bank-wide KRIs and board risk reports |
+| Internal Auditor | L4 (read-only) | Everything, plus audit findings and control test results |
+| External Contractor (IT) | L0 | Only IT runbooks for their assigned systems |
+
+- A role badge is always visible. Every answer shows **"Answered as: <role>"** and, where relevant, notes that
+  N sources were withheld for this role (without revealing what they contain).
+- **Compare mode:** one question, two roles, answers side by side, with the difference highlighted.
+- This is a simulation for the demo: choosing a role is not authentication.
 
 ## 8. Evaluation (plain RAG vs GraphRAG)
 - **~30 questions with known correct answers** in 4 types: single fact, multi-hop, cross-document, aggregation/compliance.
@@ -106,9 +127,21 @@ with fraud rings planted in the data and labelled with the right answers.
   - completeness (were all affected items found?)
   - whether citations are correct
   - response time
-  - tokens used
+  - **tokenomics** (see §8.1)
 - **Expected results, stated up front:** similar on single-fact questions, and GraphRAG ahead on the other types.
   Results are published in the UI as they come out.
+
+### 8.1 Tokenomics
+Every answer shows its token economics, and the evaluation reports them in aggregate:
+| Metric | Meaning |
+|---|---|
+| Input / output tokens | What went into and came out of the LLM |
+| Context efficiency | How many of the tokens sent were actually cited in the answer |
+| Cost per answer | Tokens × list price of the selected model (shown as $0 on the free tier, with the equivalent paid cost next to it) |
+| **Cost per correct answer** | Total cost ÷ correct answers. This is the headline number for executives |
+| Tokens saved | GraphRAG vs vector RAG. Precise graph context typically means fewer, more relevant tokens (to be measured) |
+
+A running session total ("You've used X tokens ≈ $Y") appears in the header.
 
 ## 9. Architecture & Hosting
 ```
@@ -123,23 +156,54 @@ with fraud rings planted in the data and labelled with the right answers.
  └─────────────────────────────────────────────────────────────┘
 ```
 - Everything runs in one container, and the same image runs locally with `docker compose up`.
-- **Cold start:** the Space sleeps after about 48 hours with no visitors. The first visit wakes it, which takes
-  1–3 minutes including loading the snapshot, and a "warming up" page is shown meanwhile.
+- **Idle reset after 4 hours:** if nobody uses the app for 4 hours, it resets itself. Sandbox graphs and chat
+  sessions are cleared, memory is freed, and PIN sessions expire.
+  - Note: on the free tier, Hugging Face decides when the container itself goes to sleep (about 48 hours idle),
+    and that can't be changed without paid hardware. The 4-hour rule is enforced by our app.
+  - Waking the container after it sleeps takes 1–3 minutes, and a "warming up" page is shown meanwhile.
 - **Removing Neo4j frees about 6 GB**, which leaves plenty of room on 16 GB.
 
 ## 10. UI
 - **Executive view:** landing page with key figures, one-click buttons for scenarios 1–8, a graph visualisation,
-  and the "Ask Cortex" chat with side-by-side answers and source paths.
+  and the "Ask Cortex" chat with side-by-side answers, source paths and a tokenomics strip for each answer.
+- **Role switcher** in the header (§7.1), with compare mode.
 - **Engineer view:** the raw Cypher behind every answer, the pipeline steps, evaluation results (CSV download),
   a link to the repo, and a settings panel for choosing the LLM or entering your own key.
 - **Stack:** FastAPI backend and a lightweight static front end (Cytoscape.js from a CDN for the graph view).
 
-## 11. Cost & Abuse Controls
-- The owner's Gemini key is stored as a Space secret and is never sent to the browser.
-- The shared free key has rate limits per session and per day. Once they're reached, the page asks for a BYO key.
-- **Pre-computed answers** for the scripted scenarios: they cost nothing and still work if the LLM API is down.
-- Uploads: at most 5 MB and 20 pages, one sandbox graph per session, deleted after 24h, and text-only extraction.
-- LLM-generated Cypher is **read-only**: write clauses are rejected, and queries have a timeout and row limit.
+## 11. Security, Cost, Limits & Restrictions
+**Every limit is shown to users where it applies**: on the upload box, in the chat header, in the settings panel,
+and in a "Limits & fair use" page linked from the footer. Nothing is limited silently.
+
+### 11.1 Key protection (PINs)
+| Key | Protection | Where the user sees it |
+|---|---|---|
+| Owner's Gemini key | Stored as a Space secret and never sent to the browser. LLM features need an **Access PIN** (6+ digits, shared by the owner, can be changed at any time). A valid PIN gives an 8-hour session | PIN prompt when the tester first asks a question |
+| Tester's own key (BYOK) | Encrypted **in the tester's browser** with a personal PIN (WebCrypto AES-GCM, key derived with PBKDF2). Decrypted only when a request is sent, passed to the provider over HTTPS, never stored or logged on the server | Settings panel: "Your key is encrypted on this device. Use a key with a spending limit." |
+| Failed PIN attempts | 5 failures lead to a 15-minute lockout for that session or IP | Lockout message with a countdown |
+
+### 11.2 Limits & restrictions (the user-facing list)
+| Area | Limit / rule | Shown where |
+|---|---|---|
+| Sandbox graphs | **Deleted 24 hours after upload**, or at the 4-hour idle reset if that comes first | Countdown timer on the sandbox ("Wipes in 23h 12m") |
+| Uploads | ≤ 5 MB, ≤ 20 pages, PDF only, text-only extraction, max 3 uploads per session | On the upload box |
+| Shared free LLM | Questions per session and per day (e.g. 20 / 200). BYOK has no app limit | Counter in the chat header ("12 of 20 left today") |
+| Questions | Max 500 characters. Harmful or off-topic prompts are refused | Under the input box |
+| LLM-generated queries | **Read-only** Cypher (write clauses blocked), 5-second timeout, 1,000-row limit | Engineer view, with the query |
+| Role impersonation | A simulation, not authentication | Role badge tooltip |
+| Data | 100% synthetic. Never upload real customer or confidential data | Banner on the landing page and the upload box |
+| Idle reset | After 4 hours without activity, sessions, sandboxes and PIN sessions are cleared | Footer note |
+| Scripted scenarios | Answers are **pre-computed**: they cost nothing and work even if the LLM is down | "Cached answer" tag |
+| Logging | Only questions and response times are logged. No keys, PINs or uploaded content | Limits & fair use page |
+
+## 11A. Name & Branding
+- **Name: Cortex.** The name suggests the "intelligence layer" of the enterprise, and follows the IT convention of
+  "Cortex" for intelligence, security and engineering platforms.
+  - **Caution:** several commercial products already use "Cortex". That's fine for an internal demo, but check
+    trademarks before any external or commercial use. The fictional bank is **"Cortex Bank"**.
+- **Logo:** an original mark. A "C" formed by an arc of connected graph nodes, with a bright node at its opening
+  (knowledge → insight). Navy-to-orange gradient. Files: `docs/brand/cortex-logo.svg` / `.png`.
+- **Palette:** navy `#0B1B3A`, blue `#1E3A8A`, orange `#F97316`, teal `#0EA5A4` (for "success"), slate for text.
 
 ## 12. Repository Layout
 ```
@@ -166,8 +230,9 @@ cortex/
 |---|---|
 | Day 1 AM | Bank content (Markdown) → ~60 PDFs; ops data generator |
 | Day 1 PM | LangChain ingestion into FalkorDB; graph snapshot; RAG and GraphRAG chains working |
-| Day 2 AM | UI (executive and engineer views), scenarios, uploads, BYO key, evaluation run |
-| Day 2 PM | Hugging Face Space deploy, demo script, recorded backup video, updated one-pager |
+| Day 2 AM | UI (executive and engineer views, role switcher, tokenomics), scenarios, uploads, PIN-protected keys, evaluation run |
+| Day 2 PM | Hugging Face Space deploy, limits page, demo script, updated one-pager |
+| After build | Recorded backup video, once everything is built and nearly ready |
 
 ## 15. Risks
 | Risk | Mitigation |
@@ -175,7 +240,9 @@ cortex/
 | Free-tier LLM rate limits | Pre-built graph, cached scenario answers, BYO key |
 | Imperfect LLM extraction | Schema-guided extraction, validation, spot checks against known answers |
 | Space cold start | Warm-up page, fast snapshot load |
-| Trust around BYO keys | Session-only, not logged, disclosure on the page, suggest limited keys |
+| Trust around BYO keys | Encrypted in the browser with a PIN, not logged, disclosure on the page, suggest limited keys |
+| Access PIN leaked | Owner changes it in Space secrets; rate limits cap the damage |
+| Hugging Face sleep can't be set to 4h on the free tier | App-level 4-hour idle reset (§9) |
 | Licensing (FalkorDB is SSPL) | Flag to Legal before any production use |
 
-**Open items:** final name · owner creates a free Gemini API key and a Hugging Face Space · decide whether the recorded video is needed before or after the live session.
+**Open items:** owner creates a free Gemini API key and a Hugging Face Space, and chooses the Access PIN (instructions will be provided).
