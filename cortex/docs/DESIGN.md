@@ -1,167 +1,181 @@
-# Cortex — FalkorDB vs Neo4j Demo (Design v0.1)
+# Cortex: Why FalkorDB for AI Engagements, and More (Design v0.2)
 
-> Status: **DRAFT for review** · 2026-09-29 · Working name "Cortex" (final name TBD)
+> Status: **DRAFT for review** · 2026-09-30 · Working name "Cortex" (final name TBD)
+> v0.2 replaces v0.1. The Neo4j comparison is dropped, PDF ingestion is added, the LLM is free by default, and there's a new PDF upload feature.
 
 ## 1. Goal
-Prove, with reproducible evidence, that **FalkorDB** is a better fit than our incumbent **Neo4j** for
-graph + GraphRAG workloads in an enterprise full of RAG solutions.
+Show, with evidence people can test themselves, why **FalkorDB** is the right foundation for AI
+engagements, and what it adds beyond RAG.
 
-- **Vehicle:** "Cortex Bank" — a synthetic 100-year-old bank (est. 1926) with departments, SOPs,
-  policies, guardrails, scoring metrics, and operational data.
-- **Audience:** Executives (story, impact, ROI) **and** Engineers (benchmarks, reproducibility).
-- **Access:** Self-serve, public URL, always available — no presenter or laptop needed.
-- **Format:** Hybrid — live walkthrough + recorded backup video.
-- **Deadline:** 2 days.
+- **Main comparison:** **GraphRAG on FalkorDB** vs **plain vector RAG**, the approach our environment already uses.
+  Both run on the same PDFs, with the same questions and the same LLM. The only thing that differs is the graph.
+- **"And more":** the same graph also supports things RAG can't do: fraud-ring detection, lineage and versioning,
+  role-based guardrails, and many isolated graphs in one instance.
+- **The data:** "Cortex Bank", a synthetic bank founded in 1926, with 12 departments.
+- **Audience:** executives (the story and the impact) and engineers (how it works and whether it reproduces).
+- **Access:** a public URL that people use on their own. No presenter or laptop needs to be available.
+- **Format:** hybrid, a live walkthrough plus a recorded backup video.
+- **Timeline:** 2 days.
+
+**Out of scope for now:** the Neo4j comparison (it can go in a later write-up if needed) and hosting on AWS (see §13).
 
 ## 2. Principles
-1. **Measure, don't claim.** Every advantage shown is a measured result on identical hardware and data.
-2. **Fair fight.** Same host, same data, equivalent indexes, warm caches, versions and configs published.
-3. **Honest about trade-offs.** Where Neo4j wins or ties, we show it. Credibility > cheerleading.
-4. **Reproducible.** Engineers can `docker compose up` and re-run every number.
+1. **Measure, don't claim.** Every advantage shown comes with a result people can reproduce.
+2. **Fair comparison.** Same PDFs, chunks, embeddings, LLM and prompts. Only the retrieval strategy differs.
+3. **Honest.** Where plain RAG is just as good (for example, simple lookups of a single fact), we show that.
+4. **Free to run.** A free LLM by default, free hosting, and local embeddings.
+5. **Reproducible.** `docker compose up` on any laptop gives the same results.
 
-## 3. Architecture
+## 3. How Content Gets In (hybrid)
+
+| Layer | Source | How it gets in | Size |
+|---|---|---|---|
+| **Knowledge**: policies, SOPs, guardrails, KPIs, audits, regulations | **~60 synthetic PDFs** (written by Claude, rendered as realistic bank documents) | **LangChain pipeline**: load → chunk → embed, and have the LLM extract entities and relationships → FalkorDB | ~10–30k nodes |
+| **Operations**: customers, accounts, transactions, devices, fraud rings | Structured data (banks keep this in databases, not PDFs) | Seeded Python generator → bulk load | ~1M nodes / ~5M relationships |
+| **User uploads** | Visitor's own PDF (≤5 MB, ≤20 pages) | Same pipeline, into a **private sandbox graph** for that session that is deleted after 24h | Small |
 
 ```
-            Hugging Face Docker Space (free, 16 GB RAM, 2 vCPU, port 7860)
- ┌──────────────────────────────────────────────────────────────────────┐
- │ supervisord                                                          │
- │  ├─ FalkorDB (redis-server + falkordb module)      :6379  ~4 GB     │
- │  ├─ Neo4j 5.26 LTS Community (heap 3G, pagecache 3G) :7687 ~6.5 GB  │
- │  └─ App: FastAPI + static web UI                   :7860  ~2 GB     │
- │        ├─ Loader (bundled CSV → both DBs at startup)                │
- │        ├─ Benchmark runner (same Cypher on both)                     │
- │        ├─ GraphRAG service → Claude Sonnet 5.5 (API)                │
- │        └─ Local embeddings (small open-source model, CPU)           │
- └──────────────────────────────────────────────────────────────────────┘
+PDF ─► LangChain loader ─► chunks ─┬─► embeddings (local model) ─► FalkorDB vector index
+                                   └─► LLM entity/relation extraction (schema-guided) ─► FalkorDB graph
+                                        (chunks linked to the entities they mention = evidence)
 ```
 
-- **Single container** so both databases share identical hardware (fair benchmark).
-- **Ephemeral disk:** data ships inside the image as compressed CSV, loaded on boot.
-  Load times for both DBs are captured and shown as a benchmark metric.
-- **Sleep/wake:** the Space sleeps after ~48h idle; a visit wakes it (~1–3 min incl. load).
-  The landing page shows a "warming up" status while loading.
-- **Local parity:** the same image runs via `docker compose up` for engineers.
+- **Extraction is guided by a schema.** The LLM may only produce the node and relationship types allowed in §4,
+  and its output is validated before loading.
+- **The knowledge layer is pre-built.** The 60 PDFs are ingested once at build time and the graph snapshot is
+  bundled into the image, so start-up is fast and doesn't use any LLM quota. The pipeline can be re-run at any time.
 
 ## 4. Graph Model
 
-### 4.1 Knowledge layer (the "organisational brain")
-| Node | Examples / key props |
+**Knowledge layer**
+| Node | Examples / key properties |
 |---|---|
+| `Document`, `Chunk` | Source PDF, page, text, embedding (the evidence) |
 | `Department` | Retail, Corporate & Commercial, Wealth, Treasury & Markets, Credit, Risk, Compliance (AML/KYC), Operations, IT & Cyber, HR, Legal, Internal Audit |
-| `Role`, `Person` | Title, grade, clearance level |
-| `SOP`, `SOPStep` | Versioned; `effective_from/to`; text + embedding |
-| `Policy`, `Control` | Owner, review cycle, text + embedding |
-| `Risk` | Category (credit/market/op/conduct/cyber), inherent/residual score |
-| `Regulation` | Basel III/IV, AML/KYC, GDPR, DORA, PCI-DSS, SOX, BCBS 239, EU AI Act |
-| `Guardrail` | Segregation of duties, maker-checker, AI-usage limits, data-access rules |
-| `KPI`, `KRI`, `Score` | Targets, thresholds, current values |
-| `System` | Core banking (legacy mainframe), CRM, payments, data lake |
-| `AuditFinding`, `Incident` | Severity, status, dates |
-| `Entity` (history) | Acquired banks (M&A over 100 years), legacy branches |
-| `Signal` | External news / regulatory updates (the original "AI news" idea) |
+| `Role`, `Person` | Title, clearance level |
+| `SOP`, `Policy`, `Control` | Version, effective dates, owner |
+| `Risk`, `Regulation` | Basel III/IV, AML/KYC, GDPR, DORA, PCI-DSS, SOX, BCBS 239, EU AI Act |
+| `Guardrail` | Separation of duties, maker-checker, AI-usage limits, data-access rules |
+| `KPI`, `KRI` | Targets, thresholds, current values |
+| `System`, `AuditFinding`, `Entity` (M&A history) | Legacy mainframe, acquired banks |
 
-Key relationships:
-`(Department)-[:OWNS]->(SOP|Policy)` · `(SOP)-[:SUPERSEDES]->(SOP)` · `(SOP)-[:HAS_STEP]->(SOPStep)`
-`(Policy)-[:IMPLEMENTS]->(Regulation)` · `(Control)-[:MITIGATES]->(Risk)` · `(SOPStep)-[:ENFORCES]->(Control)`
-`(Guardrail)-[:APPLIES_TO]->(Role|System|SOP)` · `(Role)-[:CAN_ACCESS]->(Policy|System)`
-`(KPI|KRI)-[:MEASURES]->(Control|Department)` · `(Signal)-[:AFFECTS]->(Regulation|System)`
-`(AuditFinding)-[:RAISED_ON]->(Control)` · `(Entity)-[:MERGED_INTO]->(Entity)`
+Relationships: `OWNS`, `IMPLEMENTS`, `MITIGATES`, `ENFORCES`, `SUPERSEDES`, `APPLIES_TO`, `CAN_ACCESS`,
+`MEASURES`, `RAISED_ON`, `MERGED_INTO`, `MENTIONS` (Chunk→entity).
 
-### 4.2 Operational layer (scale + fraud)
-`Customer`, `Account`, `Transaction`, `Device`, `IP`, `Address`, `Branch`, `Merchant` with injected
-**fraud rings** (shared devices/addresses, circular money flows, mule chains).
+**Operations layer:** `Customer`, `Account`, `Transaction`, `Device`, `IP`, `Address`, `Branch`, `Merchant`,
+with fraud rings planted in the data and labelled with the right answers.
 
-### 4.3 Scale tiers
-| Tier | Nodes | Rels | Where |
-|---|---|---|---|
-| S | ~50k | ~200k | Unit tests, CI |
-| **M (default)** | **~1M** | **~5M** | **HF Space (16 GB)** |
-| L | ~10M | ~50M | Local/bigger VM (engineers, optional) |
+## 5. Synthetic Content (generated by Claude)
+- **~60 PDFs** across the 12 departments: policies, SOPs, guardrail standards, KPI frameworks, audit reports and
+  regulatory summaries. They look realistic: letterhead, document IDs, version history tables, numbered
+  sections and approval sign-offs.
+- **Deliberate cross-references** between documents (for example, an SOP cites a policy, which cites a
+  regulation). This is what makes questions that need several hops possible.
+- **Some legacy versions** (such as a 1998 SOP replaced in 2019), so versioning and lineage can be shown.
+- Source text is kept as Markdown in the repo, and the PDFs are rendered from it deterministically.
 
-Generator is deterministic (fixed seed) — same data on every boot and every machine.
+## 6. LLM & Embeddings
+| Use | Default (free) | Optional |
+|---|---|---|
+| Q&A and upload extraction | **Google Gemini free tier** (a Flash-class model), using the owner's key | Claude Sonnet 5.5 or Gemini, using the **tester's own key** |
+| Embeddings | Small open-source model running locally on CPU | — |
 
-## 5. Synthetic Data Generation
-- **Knowledge content** (SOPs, policies, guardrails, KPIs, history narratives, signals):
-  authored once during the build and committed as JSON/Markdown — **no API cost at runtime**.
-- **Operational data:** Python generator (Faker + seeded randomness), fraud patterns injected with
-  ground-truth labels (so detection accuracy is measurable).
-- **Embeddings:** computed at build time with a small local CPU model; bundled with the data.
+- Switching providers is a single setting (LangChain chat-model interface).
+- **Tester's own key ("BYO key"):** entered in the settings panel, used only for that browser session, never
+  stored or logged. The page tells testers that the key passes through the Space's backend and suggests they use
+  a key with a low spending limit.
 
-## 6. Demo Scenarios (each shows *why graph*)
+## 7. Demo Scenarios
 | # | Scenario | What it proves |
 |---|---|---|
-| 1 | **Regulatory impact:** "EU AI Act amendment lands — what's affected?" → Regulation → Policies → Controls → SOPs → Teams → KPIs | Multi-hop traversal (4–6 hops) in ms; vector-only RAG can't do this |
-| 2 | **Guardrail-aware assistant:** answers respect the asker's role/clearance via graph access paths | Graph-native access control for AI |
-| 3 | **Fraud ring detection:** find rings via shared devices/circular flows | Classic graph strength at scale |
-| 4 | **Scoring roll-up:** control effectiveness → department KRI → bank-wide risk score | Aggregation over hierarchies |
-| 5 | **Explainable answers:** every LLM answer shows the graph path used as evidence | Trust / auditability |
-| 6 | **Change log & versioning:** a Signal updates → linked policy flagged → full audit trail | Temporal/lineage modelling |
-| 7 | **Multi-tenant:** one graph per department in a single FalkorDB instance | Isolation without Enterprise licensing |
+| 1 | **Regulatory impact:** "An EU AI Act amendment lands. What's affected?" | Following 4–6 links through the graph: regulation → policies → controls → SOPs → teams → KPIs |
+| 2 | **Side by side:** the same question answered by plain RAG and by GraphRAG, each showing its sources | Better answers on questions that need several hops or several documents |
+| 3 | **Guardrail-aware assistant:** answers change depending on the asker's role and clearance | Access control built into the graph |
+| 4 | **Upload your own PDF:** see it turn into a graph and ask questions about it | Real ingestion, plus isolated graphs per session |
+| 5 | **Fraud rings** across ~1M records | The "and more": graph analytics beyond RAG |
+| 6 | **Risk roll-up:** one control → department KRI → a bank-wide score | Aggregating up a hierarchy |
+| 7 | **Version history:** which SOP replaced which, and why | Lineage |
+| 8 | **Performance panel:** response times for these queries on the 1M-node graph | Speed at a realistic scale |
 
-## 7. Benchmark Methodology
-- **Same Cypher** on both (openCypher subset), with a small dialect shim where syntax differs
-  (differences are logged and shown — useful migration evidence).
-- **Query suite:** point lookups, 2/4/6-hop traversals, shortest path, aggregations,
-  vector-KNN, hybrid vector+traversal, fraud ring pattern, concurrent read load, bulk load, writes.
-- **Metrics:** p50/p95/p99 latency, throughput (QPS), load time, RAM used, container footprint.
-- **Protocol:** warm-up runs discarded, N=50 runs per query, sequential + concurrent (1/8/32 clients).
-- **Published:** versions, configs, hardware, raw results (CSV) — downloadable from the UI.
-- **Hypotheses to test (not assumed):**
-  - FalkorDB lower latency on multi-hop traversals (sparse-matrix / GraphBLAS engine)
-  - FalkorDB lower memory footprint for the same graph
-  - Multi-graph isolation in one instance (Neo4j Community = single database; multi-DB is Enterprise)
-  - Hybrid vector + graph in one query on both — compare latency & ergonomics
-  - Neo4j likely ahead on: tooling (Bloom, GDS algorithms), ecosystem maturity — stated openly
+## 8. Evaluation (plain RAG vs GraphRAG)
+- **~30 questions with known correct answers** in 4 types: single fact, multi-hop, cross-document, aggregation/compliance.
+- **Two setups:** (a) vector-only RAG (top-k chunks), (b) GraphRAG (vector entry points + graph traversal).
+  Both use FalkorDB, so the only difference is whether the graph is used.
+- **Metrics:**
+  - answer accuracy (graded against the known answers)
+  - completeness (were all affected items found?)
+  - whether citations are correct
+  - response time
+  - tokens used
+- **Expected results, stated up front:** similar on single-fact questions, and GraphRAG ahead on the other types.
+  Results are published in the UI as they come out.
 
-## 8. GraphRAG vs Vector RAG Evaluation
-- ~30 questions with gold answers across 3 types: single-fact, multi-hop, aggregation/compliance.
-- Pipelines compared: **(a) vector-only RAG**, **(b) GraphRAG on Neo4j**, **(c) GraphRAG on FalkorDB**.
-- Metrics: answer accuracy (graded vs gold), retrieval latency, end-to-end latency, token cost.
-- LLM: **Claude Sonnet 5.5**. Text-to-Cypher is **read-only** (write clauses rejected, query timeout).
+## 9. Architecture & Hosting
+```
+      Hugging Face Docker Space (free, 16 GB RAM, 2 vCPU, port 7860)
+ ┌─────────────────────────────────────────────────────────────┐
+ │ supervisord                                                  │
+ │  ├─ FalkorDB (knowledge graph + ops graph + sandbox graphs)  │
+ │  └─ App: FastAPI + static web UI                             │
+ │        ├─ LangChain pipelines (ingest, RAG, GraphRAG)        │
+ │        ├─ Local embeddings (CPU)                             │
+ │        └─ LLM gateway → Gemini (default) / Claude (BYO key)  │
+ └─────────────────────────────────────────────────────────────┘
+```
+- Everything runs in one container, and the same image runs locally with `docker compose up`.
+- **Cold start:** the Space sleeps after about 48 hours with no visitors. The first visit wakes it, which takes
+  1–3 minutes including loading the snapshot, and a "warming up" page is shown meanwhile.
+- **Removing Neo4j frees about 6 GB**, which leaves plenty of room on 16 GB.
 
-## 9. UI
-- **Executive view:** landing KPIs, 7 one-click scenarios, graph visualisation, head-to-head
-  latency bars, "Ask Cortex" chat with evidence paths.
-- **Engineer view:** benchmark console (pick query → run on both → live results), raw Cypher,
-  configs, CSV download, link to repo.
-- Stack: FastAPI backend + lightweight static front end (graph viz via Cytoscape.js from CDN).
+## 10. UI
+- **Executive view:** landing page with key figures, one-click buttons for scenarios 1–8, a graph visualisation,
+  and the "Ask Cortex" chat with side-by-side answers and source paths.
+- **Engineer view:** the raw Cypher behind every answer, the pipeline steps, evaluation results (CSV download),
+  a link to the repo, and a settings panel for choosing the LLM or entering your own key.
+- **Stack:** FastAPI backend and a lightweight static front end (Cytoscape.js from a CDN for the graph view).
 
-## 10. Cost & Abuse Controls (public URL)
-- `ANTHROPIC_API_KEY` stored as an HF Space secret — never sent to the browser.
-- Shared **passcode** gate for the chat; per-session daily question limit; request size limits.
-- **Pre-computed answers** for scripted scenarios (zero cost, works if the API is down).
-- Owner sets a **spend limit** in the Anthropic Console (suggested $25).
-- Expected spend: ~$0.03 per question → ~$6 per 200 questions.
+## 11. Cost & Abuse Controls
+- The owner's Gemini key is stored as a Space secret and is never sent to the browser.
+- The shared free key has rate limits per session and per day. Once they're reached, the page asks for a BYO key.
+- **Pre-computed answers** for the scripted scenarios: they cost nothing and still work if the LLM API is down.
+- Uploads: at most 5 MB and 20 pages, one sandbox graph per session, deleted after 24h, and text-only extraction.
+- LLM-generated Cypher is **read-only**: write clauses are rejected, and queries have a timeout and row limit.
 
-## 11. Repository Layout
+## 12. Repository Layout
 ```
 cortex/
-  docs/DESIGN.md, BENCHMARK.md, DEMO_SCRIPT.md
-  data/knowledge/        # authored SOPs, policies, guardrails… (JSON/MD)
-  generator/             # operational data + fraud injection (seeded)
-  loader/                # CSV → FalkorDB & Neo4j
-  bench/                 # query suite, runner, results
-  app/                   # FastAPI + static UI + GraphRAG
-  deploy/                # Dockerfile (HF Space), supervisord.conf, docker-compose.yml
+  docs/        DESIGN.md, DEMO_SCRIPT.md, EVAL.md, one-pager
+  content/     source Markdown for the ~60 bank documents
+  pdfs/        rendered PDFs (committed)
+  generator/   pdf_render.py, ops_data.py (seeded, fraud injection)
+  ingest/      LangChain pipeline: load, chunk, embed, extract, load to FalkorDB
+  app/         FastAPI, RAG + GraphRAG chains, LLM gateway, static UI
+  eval/        questions + known answers, runner, results
+  deploy/      Dockerfile (HF Space), supervisord.conf, docker-compose.yml
   tests/
 ```
 
-## 12. Two-Day Plan
+## 13. Future State (not now)
+- **AWS deployment** (for example ECS, or EC2 with FalkorDB Cloud) once there's an AWS account and budget.
+- **Neo4j comparison** as an optional write-up or benchmark appendix.
+- **Live external feed:** daily AI and regulatory news ingested as `Signal` nodes that link to the policies they
+  affect. This was the original "AI News" idea.
+
+## 14. Two-Day Plan
 | When | Deliverable |
 |---|---|
-| Day 1 AM | Schema, knowledge content, generator (tier S/M), loader for both DBs |
-| Day 1 PM | Benchmark suite + runner; first results; container builds locally |
-| Day 2 AM | App: exec + engineer views, scenarios, GraphRAG with guardrails |
-| Day 2 PM | HF Space deploy, demo script, recorded backup video, README |
+| Day 1 AM | Bank content (Markdown) → ~60 PDFs; ops data generator |
+| Day 1 PM | LangChain ingestion into FalkorDB; graph snapshot; RAG and GraphRAG chains working |
+| Day 2 AM | UI (executive and engineer views), scenarios, uploads, BYO key, evaluation run |
+| Day 2 PM | Hugging Face Space deploy, demo script, recorded backup video, updated one-pager |
 
-## 13. Risks & Open Items
+## 15. Risks
 | Risk | Mitigation |
 |---|---|
-| 16 GB shared by 2 DBs + app | Tier M sizing; memory limits per process; tier L only locally |
-| Space cold start (sleep) | Warm-up page; compressed bulk load; optional keep-alive ping |
-| Cypher dialect gaps | Shim + documented list (doubles as migration evidence) |
-| Benchmark seen as biased | Open configs, raw data, reproducible locally, Neo4j wins shown |
-| Licensing (FalkorDB SSPL, Neo4j Community GPL/Enterprise commercial) | Flag to Legal before production use |
-| Neo4j version | Using 5.26 LTS (n-1); swap image tag once confirmed |
+| Free-tier LLM rate limits | Pre-built graph, cached scenario answers, BYO key |
+| Imperfect LLM extraction | Schema-guided extraction, validation, spot checks against known answers |
+| Space cold start | Warm-up page, fast snapshot load |
+| Trust around BYO keys | Session-only, not logged, disclosure on the page, suggest limited keys |
+| Licensing (FalkorDB is SSPL) | Flag to Legal before any production use |
 
-**Open:** final project name · Neo4j edition confirmation · who owns the Anthropic key / HF Space.
+**Open items:** final name · owner creates a free Gemini API key and a Hugging Face Space · decide whether the recorded video is needed before or after the live session.
