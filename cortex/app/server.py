@@ -165,10 +165,57 @@ def scenario(name: str, role: str = "ROLE-CRO", reg: str = "REG-EUAI", center: s
     from core import retrieval, scenarios
     fn = {"impact": lambda: retrieval.impact(reg, role), "fraud": lambda: scenarios.fraud(role),
           "rollup": lambda: scenarios.rollup(role), "versions": lambda: scenarios.versions(role),
-          "perf": lambda: STATUS.get("perf") or scenarios.perf(), "graph": lambda: scenarios.neighborhood(center, role)}.get(name)
+          "perf": scenarios.perf, "graph": lambda: scenarios.neighborhood(center, role)}.get(name)
     if not fn:
         raise HTTPException(404, "Unknown scenario.")
     return fn()
+
+
+# ---------- evaluation (shared model, PIN required, max once per 6 hours) ----------
+EVAL = {"status": None, "result": None, "started": 0}
+_EVAL_FILE = ROOT / "eval" / "results.json"
+if _EVAL_FILE.exists():
+    try:
+        import json as _json
+        EVAL["result"] = _json.loads(_EVAL_FILE.read_text())
+    except Exception:
+        pass
+
+
+@app.get("/api/eval")
+def eval_status(x_session: str = Header(None)):
+    session(x_session)
+    r = EVAL["result"] or {}
+    return {"status": EVAL["status"], **{k: r.get(k) for k in ("summary", "model", "role", "finished")}}
+
+
+@app.post("/api/eval")
+def eval_start(x_session: str = Header(None)):
+    ready()
+    s = session(x_session)
+    if s["pin_until"] < time.time():
+        raise HTTPException(403, "Enter the Access PIN in Settings to run the evaluation.")
+    if EVAL["status"] and EVAL["status"].startswith("running"):
+        return {"message": EVAL["status"]}
+    if time.time() - EVAL["started"] < 6 * 3600 and EVAL["result"]:
+        raise HTTPException(429, "The evaluation already ran in the last 6 hours; results are shown below.")
+    EVAL.update(status="running: starting", started=time.time())
+
+    def job():
+        from eval.run_eval import run
+        try:
+            res = run(progress=lambda m: EVAL.update(status=m))
+            EVAL.update(result=res, status=f"finished {res['finished']}")
+            try:
+                import json as _json
+                _EVAL_FILE.write_text(_json.dumps(res, indent=1))
+            except Exception:
+                pass
+        except Exception as e:
+            EVAL.update(status=f"failed: {type(e).__name__}")
+
+    threading.Thread(target=job, daemon=True).start()
+    return {"message": "Evaluation started: about 5-8 minutes. This panel refreshes by itself."}
 
 
 # ---------- uploads -> private sandbox graph ----------

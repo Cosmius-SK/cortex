@@ -37,24 +37,23 @@ def questions():
     return qs
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--provider", default="gemini")
-    ap.add_argument("--role", default="ROLE-CRO")
-    ap.add_argument("--sleep", type=float, default=4.0, help="pause between calls (free-tier rate limits)")
-    a = ap.parse_args()
-    rows = []
-    for qtype, q, gold in questions():
+def run(provider="gemini", role="ROLE-CRO", sleep=4.0, api_key=None, progress=print):
+    rows, model = [], None
+    for n, (qtype, q, gold) in enumerate(questions(), 1):
         for mode in ("vector", "graph"):
-            r = answer(q, mode, a.role, a.provider)
+            try:
+                r = answer(q, mode, role, provider, api_key)
+            except Exception as e:  # provider hiccup: score as unanswered rather than abort the run
+                r = {"answer": "", "error": f"{type(e).__name__}"}
+            model = r.get("model") or model
             got = set(entity_ids(r.get("answer") or ""))
             t = r.get("tokenomics", {})
             rows.append({"type": qtype, "question": q, "mode": mode, "expected": gold,
                          "recall": round(len(got & set(gold)) / len(gold), 3), "input_tokens": t.get("input_tokens"),
                          "output_tokens": t.get("output_tokens"), "cost_usd": t.get("cost_usd"),
-                         "llm_ms": r.get("llm_ms"), "retrieval_ms": r.get("retrieval_ms")})
-            print(f"{mode:<6} {rows[-1]['recall']:.2f}  {q[:90]}")
-            time.sleep(a.sleep)
+                         "llm_ms": r.get("llm_ms"), "retrieval_ms": r.get("retrieval_ms"), "error": r.get("error")})
+            time.sleep(sleep)
+        progress(f"running: {n} of {len(questions())} questions done")
     summary = {}
     for mode in ("vector", "graph"):
         rs = [r for r in rows if r["mode"] == mode]
@@ -62,12 +61,24 @@ def main():
                          "fully_correct": sum(r["recall"] == 1 for r in rs), "questions": len(rs),
                          "input_tokens": sum(r["input_tokens"] or 0 for r in rs),
                          "output_tokens": sum(r["output_tokens"] or 0 for r in rs),
+                         "errors": sum(bool(r["error"]) for r in rs),
                          "by_type": {t: round(sum(r["recall"] for r in rs if r["type"] == t) /
                                               max(1, sum(r["type"] == t for r in rs)), 3) for t in {r["type"] for r in rs}}}
         s = summary[mode]
         s["tokens_per_fully_correct_answer"] = round((s["input_tokens"] + s["output_tokens"]) / max(1, s["fully_correct"]))
-    OUT.write_text(json.dumps({"provider": a.provider, "role": a.role, "summary": summary, "rows": rows}, indent=1))
-    print(json.dumps(summary, indent=1))
+    return {"provider": provider, "model": model, "role": role, "summary": summary, "rows": rows,
+            "finished": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())}
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--provider", default="gemini")
+    ap.add_argument("--role", default="ROLE-CRO")
+    ap.add_argument("--sleep", type=float, default=4.0, help="pause between calls (free-tier rate limits)")
+    a = ap.parse_args()
+    res = run(a.provider, a.role, a.sleep)
+    OUT.write_text(json.dumps(res, indent=1))
+    print(json.dumps(res["summary"], indent=1))
 
 
 if __name__ == "__main__":

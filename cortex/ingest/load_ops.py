@@ -28,6 +28,12 @@ def load_ops(scale=1.0, url="redis://localhost:6379"):
     g = graph(OPS)
     for label in ("Customer", "Account", "Device", "Address"):
         g.query(f"CREATE INDEX FOR (n:{label}) ON (n.id)")
+    # Indexes build in the background; wait until lookups use them so first measurements are fair.
+    import time
+    for _ in range(120):
+        if g.query("MATCH (a:Account {id:'A1'}) RETURN a").run_time_ms < 5:
+            break
+        time.sleep(1)
 
 
 if __name__ == "__main__":

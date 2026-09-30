@@ -38,7 +38,7 @@ h1{font-size:28px;margin:0 0 6px}h2{font-size:18px;margin:0 0 10px}h3{font-size:
 .tok b{color:var(--navy)}
 .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}.t-g{background:#ccfbf1;color:#115e59}.t-a{background:#fef3c7;color:#92400e}.t-r{background:#fee2e2;color:#991b1b}.t-n{background:#e2e8f0;color:#334155}
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--sub);font-weight:600}
-pre{background:#0b1b3a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:auto;font-size:12px}
+pre{background:#0b1b3a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:auto;font-size:12px;white-space:pre-wrap;word-break:break-word}
 #cy{height:460px;border:1px solid var(--line);border-radius:12px;background:#fff}
 .overlay{position:fixed;inset:0;background:rgba(11,27,58,.92);color:#fff;display:flex;align-items:center;justify-content:center;z-index:20;text-align:center;padding:20px}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:15;padding:16px}
@@ -133,18 +133,19 @@ Question ─► role filter (graph-native access control) ─► Vector RAG  vs 
 </section>
 
 <section data-tab="engineer" class="hidden">
-  <div class="card"><h2>Engineer view</h2><p class="sub">Everything behind the answers: Cypher, pipeline, measurements. Source: <a href="https://github.com/Cosmius-SK/AI/tree/main/cortex" target="_blank">GitHub</a>.</p></div>
-  <div class="grid g2">
-    <div class="card"><h3>Last queries</h3><div id="lastCypher" class="sub">Ask a question to see the retrieval Cypher.</div></div>
-    <div class="card"><h3>Pipeline facts</h3><table>
-      <tr><td>Documents</td><td>73 synthetic PDFs (policies, SOPs, guardrails, KRIs, audits, regulations)</td></tr>
-      <tr><td>Loader / splitter</td><td>LangChain PyPDFLoader · RecursiveCharacterTextSplitter (900 / 120)</td></tr>
-      <tr><td>Embeddings</td><td>BAAI/bge-base-en-v1.5 (768-d), local CPU, $0</td></tr>
-      <tr><td>Extraction</td><td>Pattern extraction for bank IDs (0 tokens): 295/295 relationships vs answer key · LLM structured extraction for uploads</td></tr>
-      <tr><td>Access control</td><td>(Role)-[:CAN_ACCESS]->(Document), applied before retrieval</td></tr>
-      <tr><td>LLM</td><td>Gemini (free tier, shared) or your own Gemini / Claude Sonnet 5.5 key</td></tr>
-    </table></div>
-  </div>
+  <div class="card"><h2>Engineer view</h2><p class="sub">Everything behind the answers, in order: pipeline → evaluation → live queries → performance. Source: <a href="https://github.com/Cosmius-SK/AI/tree/main/cortex" target="_blank">GitHub</a>.</p></div>
+  <div class="card"><h3>1 · Pipeline</h3><table>
+    <tr><td>Documents</td><td>73 synthetic PDFs (policies, SOPs, guardrails, KRIs, audits, regulations)</td></tr>
+    <tr><td>Loader / splitter</td><td>LangChain PyPDFLoader · RecursiveCharacterTextSplitter (900 / 120)</td></tr>
+    <tr><td>Embeddings</td><td>BAAI/bge-base-en-v1.5 (768-d), local CPU, $0</td></tr>
+    <tr><td>Extraction</td><td>Pattern extraction for bank IDs (0 tokens): 295/295 relationships vs answer key · LLM structured extraction for uploads</td></tr>
+    <tr><td>Access control</td><td>(Role)-[:CAN_ACCESS]->(Document), applied before retrieval</td></tr>
+    <tr><td>LLM</td><td>Gemini Flash (free tier, auto-selected with fallback) or your own Gemini / Claude Sonnet 5.5 key</td></tr>
+  </table></div>
+  <div class="card"><h3>2 · Evaluation: Vector RAG vs GraphRAG</h3><p class="sub">34 questions with known answers, scored by how many expected IDs each answer contains. Runs on the shared model (needs the Access PIN), about 5 minutes, at most once every 6 hours.</p>
+    <button class="btn ghost" onclick="runEval()">Run evaluation</button> <span id="evalMsg" class="muted"></span><div id="evalOut" style="margin-top:10px"></div></div>
+  <div class="card"><h3>3 · Last queries</h3><div id="lastCypher" class="sub">Ask a question to see the retrieval Cypher.</div></div>
+  <div class="card"><h3>4 · Performance</h3><button class="btn ghost" onclick="tab('scenarios');run('perf')">Run the performance panel</button></div>
 </section>
 
 <section data-tab="limits" class="hidden">
@@ -202,11 +203,28 @@ async function newSession(){ const j = await (await fetch("/api/session",{method
 const esc = t => (t||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const idlink = t => t.replace(/\b((?:REG|POL|SOP|CTL|SYS|RSK|GRD|KRI|AF|AR|RCN|RS|HIS|ORG)-[A-Z0-9-]+)\b/g, m => `<a class="id" href="#" onclick="explore('${m}');return false">${m}</a>`);
 function md(t){ let h = esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
-  h = h.split("\n").map(l => /^\s*[-*•] /.test(l) ? "<li>"+l.replace(/^\s*[-*•] /,"")+"</li>" : l+"<br>").join("").replace(/(<li>.*?<\/li>)+/g, m=>"<ul>"+m+"</ul>");
-  return idlink(h.replace(/\[(?=<a)|(?<=<\/a>)\]/g,"")); }
+  h = h.split("\n").map(l => /^\s*#{1,4} /.test(l) ? "<h4 style='margin:10px 0 4px'>"+l.replace(/^\s*#{1,4} /,"")+"</h4>"
+      : /^\s*([-*•]|\d+\.) /.test(l) ? "<li>"+l.replace(/^\s*([-*•]|\d+\.) /,"")+"</li>" : l+"<br>").join("").replace(/(<li>.*?<\/li>)+/g, m=>"<ul>"+m+"</ul>");
+  return idlink(h).replace(/\[\s*(?=<a class="id")/g,"").replace(/(<\/a>)\s*\]/g,"$1"); }
 function statusTag(s){ const c = {Green:"t-g",Amber:"t-a",Breach:"t-r",High:"t-r",Medium:"t-a",Low:"t-g",Open:"t-a",Overdue:"t-r",Closed:"t-g"}[s]||"t-n"; return `<span class="tag ${c}">${s||"n/a"}</span>`; }
 
-function tab(name){ $$("section").forEach(s => s.classList.toggle("hidden", s.dataset.tab!==name)); $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.t===name)); if(name==="limits") limits(); if(name==="upload") refreshMe(); }
+function tab(name){ $$("section").forEach(s => s.classList.toggle("hidden", s.dataset.tab!==name)); $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.t===name)); if(name==="limits") limits(); if(name==="upload") refreshMe(); if(name==="engineer") showEval(); }
+async function runEval(){ try { const r = await api("/api/eval", {method:"POST"}); $("#evalMsg").textContent = r.message; setTimeout(showEval, 5000); } catch(e){ $("#evalMsg").textContent = e.message; } }
+async function showEval(){
+  try { const r = await api("/api/eval"); $("#evalMsg").textContent = r.status || "";
+    if(r.status && /running/.test(r.status)) setTimeout(showEval, 8000);
+    if(!r.summary){ return; }
+    const m = r.summary, row = (k,f) => `<tr><td>${k}</td><td>${f(m.vector)}</td><td><b>${f(m.graph)}</b></td></tr>`;
+    const types = Object.keys(m.graph.by_type);
+    $("#evalOut").innerHTML = `<table><tr><th>Metric</th><th>Vector RAG</th><th>GraphRAG</th></tr>
+      ${row("Average recall of expected IDs", x=>Math.round(x.avg_recall*100)+"%")}
+      ${row("Fully correct answers", x=>`${x.fully_correct} / ${x.questions}`)}
+      ${types.map(t=>row(`Recall: ${t}`, x=>Math.round((x.by_type[t]||0)*100)+"%")).join("")}
+      ${row("Total tokens (in + out)", x=>(x.input_tokens+x.output_tokens).toLocaleString())}
+      ${row("Tokens per fully correct answer", x=>x.tokens_per_fully_correct_answer.toLocaleString())}</table>
+      <p class="muted">Run ${esc(r.finished||"")} · model ${esc(r.model||"")} · role ${esc(r.role||"")}</p>`;
+  } catch(e){}
+}
 
 async function init(){
   $("#nav").innerHTML = TABS.map(([t,l]) => `<button data-t="${t}" onclick="tab('${t}')">${l}</button>`).join(""); tab("overview");
@@ -306,9 +324,10 @@ async function explore(id){
   tab("scenarios"); $("#cyCard").classList.remove("hidden");
   const g = await api(`/api/scenario/graph?center=${encodeURIComponent(id)}&role=${$("#role").value}`);
   const els = [...g.nodes.map(n=>({data:{id:n.id,label:`${n.id}\n${(n.label||"").slice(0,32)}`,c:KC[n.kind]||"#64748b"}})),...g.edges.map((e,i)=>({data:{id:"e"+i+e.source+e.target,source:e.source,target:e.target,label:e.rel}}))];
-  if(!CY){ CY = cytoscape({container:$("#cy"),style:[{selector:"node",style:{"background-color":"data(c)",label:"data(label)","font-size":8,"text-wrap":"wrap","text-valign":"bottom",color:"#0f172a",width:18,height:18}},{selector:"edge",style:{width:1,"line-color":"#cbd5e1","target-arrow-shape":"triangle","target-arrow-color":"#cbd5e1","curve-style":"bezier",label:"data(label)","font-size":6,color:"#94a3b8"}}]});
+  if(!CY){ CY = cytoscape({container:$("#cy"),style:[{selector:"node",style:{"background-color":"data(c)",label:"data(label)","font-size":7,"text-wrap":"wrap","text-max-width":90,"text-valign":"bottom","text-margin-y":3,color:"#0f172a",width:16,height:16}},{selector:"edge",style:{width:1,"line-color":"#cbd5e1","target-arrow-shape":"triangle","target-arrow-color":"#cbd5e1","curve-style":"bezier"}},{selector:"edge:selected, edge.hover",style:{label:"data(label)","font-size":7,color:"#64748b"}}]});
+    CY.on("mouseover","edge",e=>e.target.addClass("hover")); CY.on("mouseout","edge",e=>e.target.removeClass("hover"));
     CY.on("tap","node",e=>explore(e.target.id())); }
-  CY.elements().remove(); CY.add(els); CY.layout({name:"cose",animate:false}).run();
+  CY.elements().remove(); CY.add(els); CY.layout({name:"cose",animate:false,nodeRepulsion:()=>12000,idealEdgeLength:()=>110,padding:30}).run();
   if(!g.nodes.length) $("#scOut").innerHTML = `<div class="card sub">${id} is not visible to this role.</div>`;
 }
 
