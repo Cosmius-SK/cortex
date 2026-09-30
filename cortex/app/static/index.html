@@ -269,7 +269,7 @@ async function ask(){
 const roleName = id => ($("#role").querySelector(`option[value="${id}"]`)||{}).textContent || id;
 function render(a, title){
   const t = a.tokenomics || {};
-  const tok = a.tokenomics ? `<div class="tok"><span>In <b>${t.input_tokens.toLocaleString()}</b></span><span>Out <b>${t.output_tokens.toLocaleString()}</b></span><span>Cost <b>$${t.cost_usd.toFixed(5)}</b></span><span>Cited <b>${t.cited_ids}/${t.context_ids}</b> IDs in context (${Math.round(t.context_efficiency*100)}%)</span><span>LLM <b>${a.llm_ms} ms</b> (${esc(a.model||"")})</span><span>Retrieval <b>${a.retrieval_ms} ms</b></span></div>` : "";
+  const tok = a.tokenomics ? `<div class="tok"><span>In <b>${t.input_tokens.toLocaleString()}</b></span><span>Out <b>${t.output_tokens.toLocaleString()}</b></span><span>Cost <b>$${t.cost_usd.toFixed(5)}</b></span><span>Cited <b>${t.cited_ids}/${t.context_ids}</b> IDs in context (${Math.round(t.context_efficiency*100)}%)</span><span>LLM <b>${a.llm_ms} ms</b> (${esc(a.model||"")}${a.fallbacks ? ", fallback" : ""})</span><span>Retrieval <b>${a.retrieval_ms} ms</b></span></div>` : "";
   return `<h3>${title} ${a.cached ? '<span class="tag t-n">cached · $0</span>' : ""}</h3>
     <p class="muted">Answered as: <b>${roleName(a.role)}</b>${a.withheld ? ` · ${a.withheld} source(s) withheld for this role` : ""}</p>
     <div class="ans">${a.answer ? md(a.answer) : `<p class="err">${esc(a.error||"No answer")}</p>`}</div>${tok}
