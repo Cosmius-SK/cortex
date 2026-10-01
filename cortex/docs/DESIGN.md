@@ -257,3 +257,21 @@ cortex/
 | Licensing (FalkorDB is SSPL) | Flag to Legal before any production use |
 
 **Open items:** owner creates a free Gemini API key and a Hugging Face Space, and chooses the Access PIN (instructions will be provided).
+
+## 16. Cradle of the Learning Portal
+Cortex is where the owner's **Learning Portal** started (1 Oct 2026). After Cortex went live, the owner wanted to be able to
+explain it from scratch, at any depth, without reading long text. That became a separate product:
+a private, phone-first portal that turns every project into learning, in a loop: **Build → Capture → Learn → Explore → Decide → Build**.
+
+**Agreed brief (for the new repo; the portal's name = the repo's name, chosen by the owner):**
+| Topic | Decision |
+|---|---|
+| Proof of concept | Cortex only; other projects join later |
+| Device and privacy | iPhone first; private (private Hugging Face Space) |
+| Formats | Audio episodes, 60-90 s narrated reels, swipe cards, 3-question checks, "explain it back"; text is the fallback |
+| Voice | Kokoro-82M `af_heart`, same as the X-Ray film (`docs/film/make_audio.py`) |
+| Structure | Concepts ↔ Projects ↔ Decisions, linked as a graph |
+| Retention | Daily 5-minute spaced-repetition drill |
+| Updates | Weekly scheduled run reads the repos (commits + `DECISIONS.md`) and refreshes learning packs; on demand too |
+| Explore | Weekly tech radar (Adopt / Trial / Watch / Hold) for the technologies and techniques each project uses, with dated sources; the owner decides |
+| Capture habit | Every project keeps a `DECISIONS.md` (decision, options, reason, lesson); see [DECISIONS.md](DECISIONS.md) |
