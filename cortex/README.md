@@ -20,7 +20,7 @@ tokenomics, one-click scenarios (regulatory impact, fraud rings, risk roll-up, l
 upload sandboxes. All data is synthetic.
 
 - Design: [`docs/DESIGN.md`](docs/DESIGN.md)
-- Live demo: https://huggingface.co/spaces/sk-aiu/cortex (deployed from GitHub `Cosmius-SK/AI`, folder `cortex/`)
+- Live demo: https://huggingface.co/spaces/sk-aiu/cortex (deployed from GitHub `Cosmius-SK/cortex`, folder `cortex/`)
 
 ## Run locally
 

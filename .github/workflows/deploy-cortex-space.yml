@@ -2,7 +2,7 @@ name: Deploy Cortex to Hugging Face Space
 
 on:
   push:
-    branches: [main, claude/ai-news-aggregation-8bi0ya]
+    branches: [main]
     paths: ["cortex/**", ".github/workflows/deploy-cortex-space.yml"]
   workflow_dispatch:
 

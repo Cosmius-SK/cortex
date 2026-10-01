@@ -25,7 +25,7 @@
 3. **Performance panel:** FalkorDB execution times on the 1M-node graph.
 4. **X-Ray:** every layer of the stack with its source file, live FalkorDB internals (version, memory, graphs, labels, indexes), real GRAPH.EXPLAIN / GRAPH.PROFILE plans, and the life of a question with timings.
 5. **Upload:** drop a PDF and ask about it. It goes into a private sandbox graph that's wiped after 24 hours.
-6. **Code:** `github.com/Cosmius-SK/AI/tree/main/cortex`. No Docker needed: `python app.py` runs it all locally.
+6. **Code:** `github.com/Cosmius-SK/cortex/tree/main/cortex`. No Docker needed: `python app.py` runs it all locally.
 
 ## Likely questions
 | Question | Answer |
