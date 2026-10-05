@@ -171,6 +171,26 @@ def scenario(name: str, role: str = "ROLE-CRO", reg: str = "REG-EUAI", center: s
     return fn()
 
 
+# ---------- Neo4j vs FalkorDB (same generic AML data, role-based queries) ----------
+@app.get("/api/compare")
+def compare_state(x_session: str = Header(None)):
+    session(x_session)
+    from compare.service import COMPARE
+    return {k: COMPARE[k] for k in ("phase", "ready", "report", "error", "platform", "live", "neo4j_available")} | {"log": COMPARE["log"][-8:]}
+
+
+@app.post("/api/compare/run/{qid}")
+def compare_run(qid: str, x_session: str = Header(None)):
+    session(x_session)
+    from compare import service
+    try:
+        return service.run_live(qid)
+    except KeyError:
+        raise HTTPException(404, "Unknown query.")
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+
+
 # ---------- X-Ray: live FalkorDB internals (read-only, free) ----------
 XRAY = {"t": 0, "data": None}
 

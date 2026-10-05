@@ -84,6 +84,9 @@ def build():
         STATUS["perf"] = perf(runs=3)  # warms caches; cached for the overview tiles
         log("Ready")
         STATUS["ready"] = True
+        if os.getenv("CORTEX_COMPARE", "1") == "1":  # Neo4j vs FalkorDB runs after the app is up (own thread)
+            from compare.service import start_background as start_compare
+            start_compare()
     except Exception as e:  # surface the failure on the status page instead of crashing silently
         log(f"Startup failed: {type(e).__name__}: {e}")
 

@@ -17,7 +17,7 @@ short_description: Why FalkorDB for AI engagements, and more
 GraphRAG demo on **Cortex Bank**, a synthetic 100-year-old bank. 73 bank PDFs are ingested with LangChain into
 FalkorDB. The same questions are answered by plain vector RAG and by GraphRAG, with role-based access control,
 tokenomics, one-click scenarios (regulatory impact, fraud rings, risk roll-up, lineage, performance) and private
-upload sandboxes. All data is synthetic.
+upload sandboxes. **Neo4j vs FalkorDB:** a generic AML graph loaded identically into both engines, with role-based queries timed live and answers compared. The **Engineer guide** tab explains how to reproduce it inside your own network. All data is synthetic.
 
 - Design: [`docs/DESIGN.md`](docs/DESIGN.md)
 - Live demo: https://huggingface.co/spaces/sk-aiu/cortex (deployed from GitHub `Cosmius-SK/cortex`, folder `cortex/`)
