@@ -55,5 +55,12 @@ Why Cortex is the way it is. Each entry: **decision · options considered · why
 | 28 | X-Ray tab: live engine internals, real EXPLAIN/PROFILE plans, life of a question | Static architecture slide | Engineers trust what they can inspect live | Show the machine running, not a diagram of it |
 | 29 | 94 s narrated 3D film, code-rendered; open TTS (Kokoro, Apache-2.0) and a synthesised score | Studio video; MusicGen (non-commercial licence) | $0, re-renderable in 15 min, licence-clean | Check model licences before "commercial" use |
 
+## Neo4j vs FalkorDB (Oct 2026)
+| # | Decision | Options considered | Why | Lesson |
+|---|---|---|---|---|
+| 30 | Compare engines on byte-identical CSVs with the same indexes and the same Cypher, per role | Separate loaders or tuned queries per engine | Only a like-for-like run is credible; differences are labelled (syntax notes, GDS projections, capability gaps) | Show Neo4j's wins and FalkorDB's gaps too |
+| 31 | Public Cortex uses a generic AML model; the exact ontology lives only in the private kit | Exact model in public; private Space | The ontology holds internal schema names and production volumes | Split by audience: public demo vs private engineering kit |
+| 32 | Neo4j runs inside the Space (tarball + GDS jar, portable Temurin 21 JRE downloaded at boot; apt has no openjdk-17 on the Space base image), in its own background thread | Precomputed results only | A live, re-runnable comparison is more convincing; the rest of Cortex stays fast to start | Keep heavy optional services off the critical start path |
+
 ## Parked (future)
 Neo4j comparison write-up · AWS deployment · live AI-news / regulatory feed as `Signal` nodes · FalkorDB licence (SSPL) review with Legal before production.

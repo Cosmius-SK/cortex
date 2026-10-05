@@ -1,0 +1,546 @@
+{
+ "name": "generic-aml",
+ "description": "Generic, PUBLIC-SAFE anti-money-laundering graph for the Cortex demo: standard industry concepts with neutral names and illustrative volumes. It is NOT any organisation's schema; the exact model lives in the private migration kit.",
+ "seed": 20261005,
+ "unique_relationships": true,
+ "nodes": [
+  {
+   "label": "Counterparty",
+   "count": 200000,
+   "properties": {
+    "name": {
+     "type": "STRING",
+     "pattern": "CP-{i}"
+    },
+    "country": {
+     "type": "STRING",
+     "choices": [
+      "US",
+      "GB",
+      "IN",
+      "SG",
+      "AE",
+      "DE",
+      "HK",
+      "MX",
+      "NG",
+      "KY"
+     ]
+    },
+    "partyType": {
+     "type": "STRING",
+     "choices": [
+      "individual",
+      "business",
+      "bank",
+      "merchant"
+     ]
+    }
+   }
+  },
+  {
+   "label": "Account",
+   "count": 24000,
+   "properties": {
+    "accountType": {
+     "type": "STRING",
+     "choices": [
+      "checking",
+      "savings",
+      "credit",
+      "loan",
+      "brokerage"
+     ]
+    },
+    "status": {
+     "type": "STRING",
+     "choices": [
+      "active",
+      "active",
+      "active",
+      "dormant",
+      "closed"
+     ]
+    },
+    "openDate": {
+     "type": "STRING",
+     "format": "date",
+     "min_year": 2005
+    },
+    "balance": {
+     "type": "DOUBLE",
+     "min": 0,
+     "max": 250000
+    }
+   }
+  },
+  {
+   "label": "Address",
+   "count": 22000,
+   "properties": {
+    "city": {
+     "type": "STRING",
+     "pattern": "City-{i}"
+    },
+    "country": {
+     "type": "STRING",
+     "choices": [
+      "US",
+      "GB",
+      "IN",
+      "SG",
+      "AE"
+     ]
+    }
+   }
+  },
+  {
+   "label": "Customer",
+   "count": 20000,
+   "properties": {
+    "name": {
+     "type": "STRING",
+     "pattern": "Customer-{i}"
+    },
+    "customerType": {
+     "type": "STRING",
+     "choices": [
+      "individual",
+      "individual",
+      "individual",
+      "business"
+     ]
+    },
+    "onboardDate": {
+     "type": "STRING",
+     "format": "date",
+     "min_year": 2000
+    },
+    "pep": {
+     "type": "BOOLEAN",
+     "p_true": 0.01
+    }
+   }
+  },
+  {
+   "label": "TaxId",
+   "count": 17000,
+   "properties": {
+    "taxIdType": {
+     "type": "STRING",
+     "choices": [
+      "national",
+      "business",
+      "foreign"
+     ]
+    }
+   }
+  },
+  {
+   "label": "Phone",
+   "count": 14000,
+   "properties": {
+    "countryCode": {
+     "type": "STRING",
+     "choices": [
+      "+1",
+      "+44",
+      "+91",
+      "+65",
+      "+971"
+     ]
+    }
+   }
+  },
+  {
+   "label": "RiskRating",
+   "count": 12000,
+   "properties": {
+    "score": {
+     "type": "INT",
+     "min": 1,
+     "max": 100
+    },
+    "band": {
+     "type": "STRING",
+     "choices": [
+      "Low",
+      "Low",
+      "Low",
+      "Medium",
+      "Medium",
+      "High"
+     ]
+    }
+   }
+  },
+  {
+   "label": "CashReport",
+   "count": 10000,
+   "properties": {
+    "amount": {
+     "type": "DOUBLE",
+     "min": 10000,
+     "max": 500000
+    },
+    "reportDate": {
+     "type": "STRING",
+     "format": "date",
+     "min_year": 2018
+    }
+   }
+  },
+  {
+   "label": "Email",
+   "count": 9000,
+   "properties": {
+    "domain": {
+     "type": "STRING",
+     "choices": [
+      "mail.example",
+      "corp.example",
+      "web.example"
+     ]
+    }
+   }
+  },
+  {
+   "label": "Alert",
+   "count": 4500,
+   "properties": {
+    "alertType": {
+     "type": "STRING",
+     "choices": [
+      "structuring",
+      "rapid-movement",
+      "high-risk-geo",
+      "sanctions-hit",
+      "unusual-cash"
+     ]
+    },
+    "status": {
+     "type": "STRING",
+     "choices": [
+      "open",
+      "open",
+      "closed",
+      "closed",
+      "closed",
+      "escalated"
+     ]
+    },
+    "score": {
+     "type": "DOUBLE",
+     "min": 0,
+     "max": 1
+    },
+    "createdDate": {
+     "type": "STRING",
+     "format": "date",
+     "min_year": 2022
+    }
+   }
+  },
+  {
+   "label": "BeneficialOwner",
+   "count": 800,
+   "properties": {
+    "ownershipPct": {
+     "type": "DOUBLE",
+     "min": 10,
+     "max": 100
+    }
+   }
+  },
+  {
+   "label": "Case",
+   "count": 400,
+   "properties": {
+    "status": {
+     "type": "STRING",
+     "choices": [
+      "open",
+      "under-review",
+      "closed"
+     ]
+    },
+    "priority": {
+     "type": "STRING",
+     "choices": [
+      "P1",
+      "P2",
+      "P3"
+     ]
+    }
+   }
+  },
+  {
+   "label": "Industry",
+   "count": 300,
+   "properties": {
+    "code": {
+     "type": "STRING",
+     "pattern": "IND-{i}"
+    },
+    "sector": {
+     "type": "STRING",
+     "choices": [
+      "finance",
+      "retail",
+      "construction",
+      "real-estate",
+      "transport",
+      "cash-intensive"
+     ]
+    }
+   }
+  },
+  {
+   "label": "SAR",
+   "count": 150,
+   "properties": {
+    "filedDate": {
+     "type": "STRING",
+     "format": "date",
+     "min_year": 2020
+    },
+    "amount": {
+     "type": "DOUBLE",
+     "min": 5000,
+     "max": 5000000
+    }
+   }
+  },
+  {
+   "label": "ATM",
+   "count": 150,
+   "properties": {
+    "location": {
+     "type": "STRING",
+     "pattern": "ATM-site-{i}"
+    }
+   }
+  },
+  {
+   "label": "Conductor",
+   "count": 60,
+   "properties": {
+    "name": {
+     "type": "STRING",
+     "pattern": "Conductor-{i}"
+    }
+   }
+  },
+  {
+   "label": "Employee",
+   "count": 50,
+   "properties": {
+    "role": {
+     "type": "STRING",
+     "choices": [
+      "teller",
+      "banker",
+      "manager"
+     ]
+    }
+   }
+  },
+  {
+   "label": "Branch",
+   "count": 40,
+   "properties": {
+    "name": {
+     "type": "STRING",
+     "pattern": "Branch-{i}"
+    },
+    "region": {
+     "type": "STRING",
+     "choices": [
+      "North",
+      "South",
+      "East",
+      "West"
+     ]
+    }
+   }
+  }
+ ],
+ "relationships": [
+  {
+   "type": "OWNS",
+   "count": 24000,
+   "from": "Customer",
+   "to": "Account",
+   "mode": "sequential"
+  },
+  {
+   "type": "AUTHORISED_USER",
+   "count": 25000,
+   "from": "Account",
+   "to": "Customer",
+   "mode": "sequential"
+  },
+  {
+   "type": "HAS_ALERT",
+   "count": 4500,
+   "from": "Customer",
+   "to": "Alert",
+   "src_hub": {
+    "fraction": 0.3,
+    "top_fraction": 0.02
+   }
+  },
+  {
+   "type": "HAS_SAR",
+   "count": 150,
+   "from": "Customer",
+   "to": "SAR"
+  },
+  {
+   "type": "HAS_CASE",
+   "count": 400,
+   "from": "Customer",
+   "to": "Case"
+  },
+  {
+   "type": "HAS_RISK_RATING",
+   "count": 12000,
+   "from": "Customer",
+   "to": "RiskRating",
+   "mode": "sequential"
+  },
+  {
+   "type": "HAS_TAX_ID",
+   "count": 20000,
+   "from": "Customer",
+   "to": "TaxId",
+   "mode": "sequential"
+  },
+  {
+   "type": "HAS_PHONE",
+   "count": 20000,
+   "from": "Customer",
+   "to": "Phone",
+   "mode": "sequential"
+  },
+  {
+   "type": "HAS_EMAIL",
+   "count": 9000,
+   "from": "Customer",
+   "to": "Email",
+   "mode": "sequential"
+  },
+  {
+   "type": "LIVES_AT",
+   "count": 20000,
+   "from": "Customer",
+   "to": "Address",
+   "mode": "sequential"
+  },
+  {
+   "type": "BANKS_AT",
+   "count": 20000,
+   "from": "Customer",
+   "to": "Branch"
+  },
+  {
+   "type": "IN_INDUSTRY",
+   "count": 5000,
+   "from": "Customer",
+   "to": "Industry"
+  },
+  {
+   "type": "FILED_CASH_REPORT",
+   "count": 10000,
+   "from": "Customer",
+   "to": "CashReport"
+  },
+  {
+   "type": "HAS_BENEFICIAL_OWNER",
+   "count": 1600,
+   "from": "Customer",
+   "to": "BeneficialOwner"
+  },
+  {
+   "type": "TRANSACTED_WITH",
+   "count": 300000,
+   "from": "Account",
+   "to": "Counterparty",
+   "hub": {
+    "fraction": 0.15,
+    "top_fraction": 0.0005
+   },
+   "src_hub": {
+    "fraction": 0.1,
+    "top_fraction": 0.005
+   },
+   "properties": {
+    "txnCount": {
+     "type": "INT",
+     "min": 1,
+     "max": 400
+    },
+    "totalAmount": {
+     "type": "DOUBLE",
+     "min": 10,
+     "max": 900000
+    },
+    "lastDate": {
+     "type": "STRING",
+     "format": "date",
+     "min_year": 2023
+    }
+   }
+  },
+  {
+   "type": "REGISTERED_AT",
+   "count": 24000,
+   "from": "Account",
+   "to": "Address",
+   "mode": "sequential"
+  },
+  {
+   "type": "USED_BRANCH",
+   "count": 60000,
+   "from": "Account",
+   "to": "Branch"
+  },
+  {
+   "type": "USED_ATM",
+   "count": 30000,
+   "from": "Account",
+   "to": "ATM"
+  },
+  {
+   "type": "CONDUCTED_BY",
+   "count": 3000,
+   "from": "Account",
+   "to": "Conductor"
+  },
+  {
+   "type": "SERVICED_BY",
+   "count": 2000,
+   "from": "Account",
+   "to": "Employee"
+  }
+ ],
+ "rings": {
+  "label": "Customer",
+  "count": 40,
+  "reference_population": 20000,
+  "size": [
+   4,
+   8
+  ],
+  "share": [
+   "HAS_PHONE",
+   "LIVES_AT",
+   "HAS_EMAIL"
+  ],
+  "targets": {
+   "HAS_PHONE": "Phone",
+   "LIVES_AT": "Address",
+   "HAS_EMAIL": "Email"
+  }
+ }
+}

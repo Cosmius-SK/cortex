@@ -43,7 +43,7 @@ pre{background:#0b1b3a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:au
 .overlay{position:fixed;inset:0;background:rgba(11,27,58,.92);color:#fff;display:flex;align-items:center;justify-content:center;z-index:20;text-align:center;padding:20px}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:15;padding:16px}
 .modal .card{max-width:560px;width:100%}
-.err{color:var(--red);font-size:13px}.ok{color:#047857;font-size:13px}
+.err{color:var(--red);font-size:13px}.gapn{font-size:13px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 10px}.ok{color:#047857;font-size:13px}
 .drop{border:2px dashed #cbd5e1;border-radius:14px;padding:26px;text-align:center;background:#fff}
 .bar{height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden}.bar>i{display:block;height:100%}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--or);border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
@@ -59,6 +59,11 @@ pre{background:#0b1b3a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:au
 .step.fk{border-color:#fdba74;background:#fffbf5}
 .why{font-size:13px}.why b{color:var(--navy)}
 pre.plan{white-space:pre;overflow-x:auto;word-break:normal}pre.plan .op{color:#fdba74;font-weight:700}pre.plan .met{color:#5eead4}
+.cbar{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0}.cbar .lab{width:78px;color:var(--sub);font-weight:700}
+.cbar .tr{flex:1;background:#f1f5f9;border-radius:6px;height:14px;overflow:hidden}.cbar .tr i{display:block;height:100%;border-radius:6px}
+.cbar .v{width:130px;text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}.b-match{background:#ccfbf1;color:#115e59}.b-info,.b-overlap,.b-approx{background:#e0e7ff;color:#3730a3}.b-mismatch,.b-error{background:#fee2e2;color:#991b1b}.b-na{background:#fef3c7;color:#92400e}
+pre.cmd{white-space:pre-wrap;word-break:break-word}
 .hidden{display:none!important}
 </style>
 </head>
@@ -83,12 +88,13 @@ pre.plan{white-space:pre;overflow-x:auto;word-break:normal}pre.plan .op{color:#f
 <section data-tab="overview">
   <div class="card">
     <h1>Why FalkorDB for AI engagements, and more</h1>
-    <p class="sub">RAG finds <b>similar text</b>. Real questions need <b>connected facts</b>. Cortex turns 73 bank documents into a knowledge graph in FalkorDB and answers the same questions two ways: plain vector RAG and GraphRAG. Then it shows what else the graph can do.</p>
+    <p class="sub"><b>Neo4j vs FalkorDB, side by side.</b> The same anti-money-laundering graph (byte-identical CSVs) is loaded into both engines, and the same role-based questions run on both: investigator, fraud analyst, compliance, data scientist. You see the time, whether the answers agree, and what only one engine can do.</p>
+    <p class="sub" style="margin-top:6px">Plus <b>GraphRAG</b>: Cortex turns 73 bank documents into a knowledge graph and answers questions two ways, plain vector RAG and GraphRAG.</p>
     <div class="chips" style="margin-top:10px">
-      <button class="btn" onclick="tab('ask')">Ask Cortex</button>
-      <button class="btn ghost" onclick="tab('scenarios');run('impact')">Regulatory impact</button>
+      <button class="btn" onclick="tab('compare')">Neo4j vs FalkorDB</button>
+      <button class="btn ghost" onclick="tab('ask')">GraphRAG: vector vs graph</button>
       <button class="btn ghost" onclick="tab('scenarios');run('fraud')">Fraud rings</button>
-      <button class="btn ghost" onclick="tab('upload')">Upload your PDF</button>
+      <button class="btn ghost" onclick="tab('guide')">Engineer guide</button>
     </div>
   </div>
   <div class="grid g4" id="tiles"></div>
@@ -194,6 +200,102 @@ Question ─► role filter (graph-native access control) ─► Vector RAG  vs 
     <div class="steps" id="xrLife"></div></div>
 </section>
 
+<section data-tab="compare" class="hidden">
+  <div class="card"><h2>Neo4j vs FalkorDB: same data, same questions, per role</h2>
+    <p class="sub">A generic anti-money-laundering graph (customers, accounts, counterparties, alerts, cases, SARs, identifiers) is generated once. The <b>same CSV files</b> are loaded into FalkorDB (GRAPH.BULK) and Neo4j Community + GDS (neo4j-admin import), with the <b>same indexes</b>, and the <b>same Cypher</b> runs on both wherever both accept it. Timings are medians of warm runs, client round trip, on this container.</p>
+    <div id="cmpStatus" class="muted" style="margin-top:6px"></div>
+    <div class="grid g4" id="cmpKpis" style="margin-top:12px"></div>
+  </div>
+  <div class="card"><h3>Pick a role</h3><div class="chips" id="cmpRoles"></div><p class="sub" id="cmpRoleSum" style="margin-top:8px"></p></div>
+  <div id="cmpQueries"></div>
+  <div class="card"><h3>Platform</h3><div id="cmpPlatform" class="sub">Loading...</div></div>
+  <div class="card why"><h3>Read this before quoting a number</h3>
+    <ul class="sub" style="padding-left:18px">
+      <li><b>Generic model, illustrative volumes.</b> Your organisation's exact model and, inside your network, your real data run in the private migration kit. See the <a href="#" onclick="tab('guide');return false">Engineer guide</a>.</li>
+      <li><b>Neo4j GDS algorithms</b> work on an in-memory projection that must be built first. Its time is shown and included in the total. FalkorDB runs its algorithms on the live graph.</li>
+      <li><b>Capability gaps are shown, not hidden:</b> Louvain/Leiden, node similarity and graph embeddings exist in Neo4j GDS only in the tested FalkorDB version. Louvain (D5) and node similarity (D6) are shown with their practical workaround: export with Cypher, compute outside the database, timed in full. Embeddings (FastRP, Node2Vec, GraphSAGE) have no workaround here.</li>
+      <li><b>Semantics check (S1):</b> with parallel relationships, FalkorDB's <code>count(neighbour)</code> counts distinct neighbours. The demo data has none; your data might.</li>
+      <li>Both engines run in one shared, free container. Treat the ratios as indicative, and use the kit on your own servers for real numbers.</li>
+    </ul></div>
+</section>
+
+<section data-tab="guide" class="hidden">
+  <div class="card"><h2>Engineer guide: reproduce this inside your network</h2>
+    <p class="sub">This page is <b>Step 1</b>: a public demo on a generic model. <b>Step 2</b> brings the private migration kit into your GitHub Enterprise and reproduces the same comparison on synthetic data shaped like your organisation's model. <b>Step 3</b> switches to your real schema and data, without anything leaving your network. Every step prints PASS/FAIL and writes a report; the final report has the same layout as this demo.</p>
+    <div class="grid g3" style="margin-top:12px">
+      <div class="step fk"><div class="n">STEP 1 · HERE</div><b>Public demo</b>Generic AML model, Neo4j vs FalkorDB, per role. No company data.</div>
+      <div class="step fk"><div class="n">STEP 2 · YOUR GHE</div><b>Kit on synthetic data</b>Import the private kit, run it on a server, get the same report on your organisation's model.</div>
+      <div class="step fk"><div class="n">STEP 3 · YOUR DATA</div><b>Your schema / real sample</b>Model from your schema export, or a read-only masked sample of real data. It stays on the server.</div>
+    </div></div>
+
+  <div class="card"><h3>The three rules</h3><ol class="sub" style="padding-left:18px">
+    <li><b>Bulk loads build from scratch.</b> <code>GRAPH.BULK</code> and <code>neo4j-admin import</code> never append.</li>
+    <li><b>A failed load means a new graph name</b> (or an explicit overwrite of the <i>disposable</i> comparison Neo4j). Never <code>FLUSHALL</code>, never <code>docker compose down -v</code>.</li>
+    <li><b>Real data never leaves the server.</b> Not into Git, not into the evidence bundle, not into chat or tickets.</li></ol></div>
+
+  <div class="card"><h3>Step 2 · 1 &nbsp;Get the kit into GitHub Enterprise</h3>
+    <table><tr><th style="width:28%">GHE can reach github.com</th><td>GHE → <b>New → Import repository</b>, with the repository URL and a read token from the Cortex owner. Or mirror it:<pre class="cmd">git clone --mirror https://github.com/&lt;owner&gt;/falkor-migration-kit.git
+cd falkor-migration-kit.git && git push --mirror https://&lt;ghe-host&gt;/&lt;org&gt;/falkor-migration-kit.git</pre></td></tr>
+    <tr><th>No route to github.com</th><td>Ask for the <b>offline bundle</b> (<code>falkor-kit-offline-&lt;date&gt;.tar.gz</code>). It holds the code, Python wheels, both Docker images, the GDS plugin and a git bundle:<pre class="cmd">tar xzf falkor-kit-offline-*.tar.gz && cd falkor-kit
+git clone offline/falkor-migration-kit.bundle ../falkor-migration-kit && cd ../falkor-migration-kit
+git remote set-url origin https://&lt;ghe-host&gt;/&lt;org&gt;/falkor-migration-kit.git && git push -u origin --all</pre></td></tr>
+    <tr><th>GitHub Actions</th><td>The kit's unit-test workflow needs <code>actions/checkout</code> and <code>actions/setup-python</code>. If your GHE doesn't sync public actions, disable it or point it at your internal mirrors. It's optional.</td></tr></table></div>
+
+  <div class="card"><h3>Step 2 · 2 &nbsp;Prepare the server (once)</h3>
+    <p class="sub">A Linux VM inside your network. On AWS: a non-burstable instance, e.g. <b>8 vCPU / 32 GB</b> (m7i.2xlarge or r7i.xlarge; Graviton works with the arm64 images), on a persistent gp3 volume with 100 GB+, reached via SSM. No inbound ports are needed: both databases listen on 127.0.0.1 only.</p>
+    <pre class="cmd">sudo bash scripts/aws/ec2_bootstrap.sh        # Amazon Linux 2023 / Ubuntu: Docker, Compose v2, Python 3.11+, make
+git clone https://&lt;ghe-host&gt;/&lt;org&gt;/falkor-migration-kit.git && cd falkor-migration-kit
+make setup                                     # venv, pinned packages, unit tests  → "OK"
+#   edit .env: pin FALKORDB_IMAGE and NEO4J_IMAGE to digests; set memory limits
+make step0-preflight                           # every required line PASS
+make step1-falkordb                            # PONG, data dir, graph module
+make compare-fetch-gds                         # GDS plugin jar (already in the offline bundle)</pre></div>
+
+  <div class="card"><h3>Step 2 · 3 &nbsp;Run the comparison on synthetic data</h3>
+    <pre class="cmd">make compare-data        # synthetic set from the kit's model (shaped by your ontology answers)
+make compare-load        # SAME CSVs → FalkorDB (new graph) and Neo4j (neo4j-admin import)
+make compare-up          # starts the comparison Neo4j on 127.0.0.1:7688; first start sets its password
+make compare-run         # all roles  (or ROLES=investigator,fraud)  → artifacts/compare.html</pre>
+    <table><tr><th style="width:28%">You should see</th><td><code>PASS checksums match</code> twice (once per engine), <code>neo4j-admin import done</code>, then one line per query with both timings, ending in <code>answers agree N/N</code> and the Neo4j-only list.</td></tr>
+    <tr><th>If it fails</th><td><b>"Key already exists"</b>: use a new <code>COMPARE_GRAPH</code> name. <b>"Database already exist"</b>: add <code>OVERWRITE=yes</code> (comparison Neo4j only). <b>A <code>mismatch</code></b>: check the S1 parallel-relationship row first.</td></tr>
+    <tr><th>Scale up</th><td><code>COMPARE_FACTOR=1</code> runs the full reference size. Go bigger only after the pilot memory gate in the RUNBOOK, with new data and graph names each time.</td></tr></table></div>
+
+  <div class="card"><h3>Step 3 · A &nbsp;Your schema, synthetic data (no values leave Neo4j)</h3>
+    <pre class="cmd">make step2-export COUNTS=1                     # metadata + count-store volumes (no scans, no values)
+make step3-translate && make step3-check       # resolve every review item
+#   properties.json from the ontology answers: {"Customer": {"customerType": {"type": "STRING", "choices": ["individual","business"]}}}
+make org-model ORG_SCALE=0.001 ORG_PROPERTIES=properties.json
+make compare-data compare-load COMPARE_MODEL=models/org.model.json COMPARE_DATA=data/org_synth COMPARE_GRAPH=org_synth_v1 OVERWRITE=yes
+make compare-up && make compare-run COMPARE_DATA=data/org_synth COMPARE_GRAPH=org_synth_v1</pre>
+    <p class="sub">Labels, relationship types, endpoints and volumes come from Neo4j's count store. Property types come only from your <code>properties.json</code>, because reading them from the database would scan it.</p></div>
+
+  <div class="card"><h3>Step 3 · B &nbsp;Your real data, sampled (stays on the server)</h3>
+    <pre class="cmd">#   keys.json: business key per label, e.g. {"Customer": "customerId", "Account": "accountNumber", "Alert": "alertId"}
+make org-extract ORG_SEED_LABEL=Customer ORG_SEEDS=2000 ORG_HOPS=2 ORG_MAX_DEGREE=200 ORG_KEYS=keys.json ORG_MASK=name,email,phone
+make compare-load COMPARE_DATA=data/org_sample COMPARE_GRAPH=org_real_v1 OVERWRITE=yes
+make compare-up && make compare-run COMPARE_DATA=data/org_sample COMPARE_GRAPH=org_real_v1</pre>
+    <table><tr><th style="width:28%">How it samples</th><td>Read-only session. Seed nodes, then a fixed number of hops, with at most <code>ORG_MAX_DEGREE</code> neighbours per node, so hubs can't explode it; a hard cap of 2M nodes. Masked properties become salted hashes: joins still work, values are unreadable.</td></tr>
+    <tr><th>Before you run it</th><td>Data-protection approval on file. <code>data/</code> is git-ignored and excluded from evidence bundles. Delete the sample when done.</td></tr></table></div>
+
+  <div class="card"><h3>Step 3 · C &nbsp;Your roles and your queries</h3>
+    <p class="sub">Edit <code>compare/aml_queries.json</code>:</p>
+    <ul class="sub" style="padding-left:18px">
+      <li><b>roles:</b> add personas, e.g. Sanctions Analyst or Branch Manager.</li>
+      <li><b>queries:</b> <code>cypher</code> when both engines accept the same text; otherwise <code>cypher_neo4j</code> / <code>cypher_falkordb</code> plus a <code>syntax_note</code>. GDS algorithms also need <code>neo4j_setup</code> / <code>neo4j_teardown</code>.</li>
+      <li><b>params:</b> <code>{"from": "node", "label": "Alert", "index": 7}</code> picks a real id from the loaded data.</li>
+      <li><b>indexes:</b> created identically on both engines.</li>
+    </ul>
+    <p class="sub">Put your application's top queries here. They decide the migration, not the demo's.</p></div>
+
+  <div class="card"><h3>Checklist before you trust a number</h3><ul class="checks sub">
+    <li>Same CSVs in both engines (two "checksums match" lines)</li>
+    <li>Every comparable query <code>match</code>/<code>overlap</code>; any <code>mismatch</code> investigated (start with S1)</li>
+    <li>GDS projection costs and the Neo4j-only capabilities discussed with the data-science team</li>
+    <li>Hardware, image digests, heap/page cache and data shape recorded in the report's Platform section</li>
+    <li>Real-data runs: approval, masking, sample deleted afterwards</li>
+    <li>Evidence bundle (<code>make step9-bundle</code>) attached to the internal pull request</li></ul></div>
+</section>
+
 <section data-tab="limits" class="hidden">
   <div class="card"><h2>Limits &amp; fair use</h2><p class="sub">Nothing is limited silently. These rules apply to everyone.</p><div id="limitsTbl"></div></div>
 </section>
@@ -224,7 +326,7 @@ Question ─► role filter (graph-native access control) ─► Vector RAG  vs 
 
 <script>
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const TABS = [["overview","Overview"],["ask","Ask Cortex"],["scenarios","Scenarios"],["upload","Upload"],["engineer","Engineer view"],["xray","X-Ray"],["limits","Limits"]];
+const TABS = [["overview","Overview"],["compare","Neo4j vs FalkorDB"],["ask","GraphRAG"],["scenarios","Scenarios"],["upload","Upload"],["engineer","Engineer view"],["xray","X-Ray"],["guide","Engineer guide"],["limits","Limits"]];
 const SAMPLES = [
   "Which controls, procedures and open audit findings are affected by the EU AI Act?",
   "What must happen before a high-risk AI model is deployed?",
@@ -254,7 +356,7 @@ function md(t){ let h = esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
   return idlink(h).replace(/\[\s*(?=<a class="id")/g,"").replace(/(<\/a>)\s*\]/g,"$1"); }
 function statusTag(s){ const c = {Green:"t-g",Amber:"t-a",Breach:"t-r",High:"t-r",Medium:"t-a",Low:"t-g",Open:"t-a",Overdue:"t-r",Closed:"t-g"}[s]||"t-n"; return `<span class="tag ${c}">${s||"n/a"}</span>`; }
 
-function tab(name){ $$("section").forEach(s => s.classList.toggle("hidden", s.dataset.tab!==name)); $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.t===name)); if(name==="limits") limits(); if(name==="upload") refreshMe(); if(name==="engineer") showEval(); if(name==="xray") xray(); }
+function tab(name){ $$("section").forEach(s => s.classList.toggle("hidden", s.dataset.tab!==name)); $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.t===name)); if(name==="limits") limits(); if(name==="upload") refreshMe(); if(name==="engineer") showEval(); if(name==="xray") xray(); if(name==="compare") cmpLoad(); }
 async function runEval(){ try { const r = await api("/api/eval", {method:"POST"}); $("#evalMsg").textContent = r.message; setTimeout(showEval, 5000); } catch(e){ $("#evalMsg").textContent = e.message; } }
 async function showEval(){
   try { const r = await api("/api/eval"); $("#evalMsg").textContent = r.status || "";
@@ -384,6 +486,53 @@ function xrLife(){
     ["Tokenomics", "Tokens and cost are counted and shown with every answer.", t ? `${n0(t.input_tokens + t.output_tokens)} tokens · $${t.cost_usd.toFixed(4)}` : "", 0]];
   $("#xrLife").innerHTML = st.map(([h,d,m,fk],i) => `<div class="step ${fk?"fk":""}"><div class="n">STEP ${i+1}${fk?" · FALKORDB":""}</div><b>${h}</b>${d}${m?`<div class="m">${m}</div>`:""}</div>`).join("");
   if(a) $("#xrLifeSub").textContent = "Real timings from your last GraphRAG answer. Orange steps run inside FalkorDB.";
+}
+// ---------- Neo4j vs FalkorDB ----------
+let CMP = {state: null, role: "investigator", timer: null};
+const ms = x => x == null ? "—" : (x >= 1000 ? (x/1000).toFixed(2) + " s" : x.toFixed(x < 10 ? 2 : 1) + " ms");
+async function cmpLoad(){
+  try { CMP.state = await api("/api/compare"); } catch(e){ $("#cmpStatus").textContent = e.message; return; }
+  const st = CMP.state, rep = st.report;
+  $("#cmpStatus").innerHTML = st.ready ? `Engines: ${esc(Object.values(rep.engines).join(" · "))} · ${esc(rep.dataset.totals ? rep.dataset.totals.nodes.toLocaleString() + " nodes / " + rep.dataset.totals.relationships.toLocaleString() + " relationships" : "")} · measured ${esc(rep.finished_at)}`
+    + (st.error ? `<div class="err">${esc(st.error)}</div>` : "")
+    : `<span class="spin"></span> ${esc(st.phase)}${st.error ? `<div class="err">${esc(st.error)}</div>` : ""} <span class="muted">(first start downloads Neo4j; the rest of Cortex works meanwhile)</span>`;
+  clearTimeout(CMP.timer); if(!st.ready && !st.error) CMP.timer = setTimeout(() => { if(!$('section[data-tab="compare"]').classList.contains("hidden")) cmpLoad(); }, 5000);
+  if(!rep) { $("#cmpKpis").innerHTML = ""; $("#cmpQueries").innerHTML = ""; $("#cmpRoles").innerHTML = ""; $("#cmpPlatform").textContent = "Waiting for the first run."; return; }
+  const s = rep.summary;
+  const k = [[`${s.median_speedup ?? "—"}×`, "median speed-up, FalkorDB vs Neo4j (total incl. projections)"], [`${s.falkordb_faster} / ${s.compared}`, "queries faster on FalkorDB"],
+             [`${s.answers_match} / ${s.comparable}`, "comparable answers that agree"], [`${s.neo4j_only.length}`, "Neo4j-only capabilities (shown, not hidden)"]];
+  $("#cmpKpis").innerHTML = k.map(([v,l]) => `<div class="card" style="margin:0;padding:12px"><div class="stat" style="font-size:24px">${esc(v)}</div><div class="muted">${esc(l)}</div></div>`).join("");
+  $("#cmpRoles").innerHTML = rep.roles.map(r => `<button class="chip ${r.id===CMP.role?"on":""}" style="${r.id===CMP.role?"border-color:var(--or);font-weight:700":""}" onclick="CMP.role='${r.id}';cmpRender()">${esc(r.name)}</button>`).join("");
+  $("#cmpPlatform").innerHTML = Object.keys(st.platform || {}).length ? `<table>${Object.entries(st.platform).map(([a,b]) => `<tr><th style="width:30%">${esc(a)}</th><td>${esc(b)}</td></tr>`).join("")}</table>` : "n/a";
+  cmpRender();
+}
+function cmpCard(r){
+  const n = r.engines["Neo4j"] || {}, f = r.engines["FalkorDB"] || {};
+  const tot = d => d.status === "ok" ? d.total_ms : null, mx = Math.max(tot(n) || 0, tot(f) || 0) || 1;
+  const bar = (lab, d, col) => `<div class="cbar"><span class="lab">${lab}</span><span class="tr"><i style="width:${d.status==="ok"?Math.max(2,100*d.total_ms/mx):0}%;background:${col}"></i></span><span class="v">${d.status==="ok" ? `<b>${ms(d.total_ms)}</b>${d.projection_ms?` <span class="muted">(${ms(d.projection_ms)} projection)</span>`:""}${d.post_ms?` <span class="muted">(${ms(d.total_ms-d.post_ms)} export + ${ms(d.post_ms)} ${esc(d.post)} outside DB)</span>`:""}` : `<span class="muted">${esc(d.status || "n/a")}</span>`}</span></div>`;
+  const ag = r.agreement === "n/a" ? "na" : r.agreement;
+  const sp = r.speedup ? (r.speedup >= 1 ? `FalkorDB ${r.speedup}× faster` : `Neo4j ${(1/r.speedup).toFixed(2)}× faster`) : "";
+  const rows = d => d.rows ? `<pre style="max-height:150px">${esc(d.rows.slice(0,6).map(x => JSON.stringify(x)).join("\n"))}${d.row_count>6?`\n… ${d.row_count} rows`:""}</pre>` : "";
+  return `<div class="card" id="cq_${r.id}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><b>${esc(r.id)} · ${esc(r.title)}</b><div class="sub" style="font-size:13px">${esc(r.what)}</div></div>
+    <div style="text-align:right"><span class="badge b-${esc(ag)}">${esc(r.agreement || "")}</span><div class="muted">${esc(r.agreement_detail || "")}</div><div style="font-weight:700;color:var(--navy)">${esc(sp)}</div></div></div>
+    <div style="margin-top:8px">${bar("Neo4j", n, "#64748b")}${bar("FalkorDB", f, "linear-gradient(90deg,var(--or),#fb923c)")}</div>
+    ${r.gap ? `<p class="gapn" style="margin-top:6px"><b>Capability gap:</b> ${esc(r.gap)}</p>` : ""}${r.syntax_note ? `<p class="muted" style="margin-top:6px">${esc(r.syntax_note)}</p>` : ""}
+    <div class="chips" style="margin-top:8px"><button class="chip" onclick="cmpRun('${r.id}')">Run live now</button><button class="chip" onclick="this.parentNode.nextElementSibling.classList.toggle('hidden')">Cypher and results</button>${r.ran_at?`<span class="muted">live run ${esc(r.ran_at)}</span>`:""}</div>
+    <div class="hidden grid g2" style="margin-top:8px"><div><h3>Neo4j</h3>${n.setup?`<pre>${esc(n.setup)}</pre>`:""}<pre>${esc(n.cypher || "not available")}</pre>${rows(n)}${n.error?`<p class="err">${esc(n.error)}</p>`:""}</div>
+      <div><h3>FalkorDB</h3><pre>${esc(f.cypher || "not available")}</pre>${rows(f)}${f.error?`<p class="err">${esc(f.error)}</p>`:""}</div></div></div>`;
+}
+function cmpRender(){
+  const rep = CMP.state && CMP.state.report; if(!rep) return;
+  const role = rep.roles.find(r => r.id === CMP.role) || rep.roles[0]; CMP.role = role.id;
+  $$("#cmpRoles .chip").forEach((b,i) => { const on = rep.roles[i].id === CMP.role; b.style.borderColor = on ? "var(--or)" : ""; b.style.fontWeight = on ? "700" : ""; });
+  $("#cmpRoleSum").textContent = role.summary;
+  const live = CMP.state.live || {};
+  $("#cmpQueries").innerHTML = rep.results.filter(r => r.role === CMP.role).map(r => cmpCard(live[r.id] || r)).join("");
+}
+async function cmpRun(id){
+  const el = $("#cq_" + id); if(el) el.style.opacity = .55;
+  try { const r = await api("/api/compare/run/" + id, {method: "POST"}); CMP.state.live[id] = r; cmpRender(); }
+  catch(e){ if(el){ el.style.opacity = 1; el.insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);} }
 }
 async function run(name){
   $("#cyCard").classList.toggle("hidden", name!=="graph");

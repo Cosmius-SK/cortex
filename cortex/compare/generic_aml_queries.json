@@ -1,0 +1,279 @@
+{
+ "name": "Generic AML: Neo4j vs FalkorDB",
+ "version": "1.0",
+ "notes": "Public demo pack on a generic AML model. The private migration kit runs the same pack structure on your organisation's exact model and, inside your network, on your real data.",
+ "indexes": [
+  [
+   "Customer",
+   "id"
+  ],
+  [
+   "Account",
+   "id"
+  ],
+  [
+   "Alert",
+   "id"
+  ],
+  [
+   "Counterparty",
+   "id"
+  ],
+  [
+   "Address",
+   "id"
+  ],
+  [
+   "Phone",
+   "id"
+  ],
+  [
+   "Email",
+   "id"
+  ],
+  [
+   "TaxId",
+   "id"
+  ],
+  [
+   "Branch",
+   "id"
+  ],
+  [
+   "RiskRating",
+   "band"
+  ],
+  [
+   "Alert",
+   "status"
+  ],
+  [
+   "Industry",
+   "sector"
+  ],
+  [
+   "Customer",
+   "pep"
+  ]
+ ],
+ "params": {
+  "cid": {
+   "from": "ring_member",
+   "index": 0,
+   "fallback_label": "Customer",
+   "fallback_index": 0
+  },
+  "cid2": {
+   "from": "ring_member",
+   "index": 1,
+   "fallback_label": "Customer",
+   "fallback_index": 1
+  },
+  "aid": {
+   "from": "node",
+   "label": "Alert",
+   "index": 7
+  },
+  "min_degree": {
+   "value": 40
+  }
+ },
+ "roles": [
+  {
+   "id": "investigator",
+   "name": "AML Investigator",
+   "summary": "Works one customer or alert at a time: 360\u00b0 view, triage, who else shares this customer's identifiers."
+  },
+  {
+   "id": "fraud",
+   "name": "Fraud Analyst",
+   "summary": "Hunts networks: shared counterparties, mule accounts, rings of customers sharing identifiers, paths between suspects."
+  },
+  {
+   "id": "compliance",
+   "name": "Compliance Officer / MLRO",
+   "summary": "Portfolio oversight: SAR and case pipeline, high-risk customers with open alerts, cash-intensive exposure, PEPs."
+  },
+  {
+   "id": "datasci",
+   "name": "Data Scientist (GDS)",
+   "summary": "Graph algorithms used in AML/fraud: components, centrality, communities, similarity."
+  },
+  {
+   "id": "semantics",
+   "name": "Engineering: semantic checks",
+   "summary": "Queries that expose behaviour differences between the engines on YOUR data, before anyone trusts a number."
+  }
+ ],
+ "queries": [
+  {
+   "id": "I1",
+   "role": "investigator",
+   "title": "Customer 360",
+   "what": "Every relationship from one customer, grouped by type.",
+   "compare": "rows",
+   "cypher": "MATCH (c:Customer {id: $cid})-[r]->(x) RETURN type(r) AS rel, count(x) AS n ORDER BY rel"
+  },
+  {
+   "id": "I2",
+   "role": "investigator",
+   "title": "Alert triage",
+   "what": "From an alert to its customer, accounts, counterparties and total exposure.",
+   "compare": "rows",
+   "cypher": "MATCH (al:Alert {id: $aid})<-[:HAS_ALERT]-(c:Customer)-[:OWNS]->(a:Account) OPTIONAL MATCH (a)-[t:TRANSACTED_WITH]->(ep:Counterparty) RETURN c.id AS customer, count(DISTINCT a) AS accounts, count(DISTINCT ep) AS counterparties, round(sum(t.totalAmount)) AS exposure ORDER BY customer"
+  },
+  {
+   "id": "I3",
+   "role": "investigator",
+   "title": "Entity resolution",
+   "what": "Other customers sharing a phone, e-mail, tax ID or address with this customer.",
+   "compare": "rows",
+   "cypher": "MATCH (c:Customer {id: $cid})-[:HAS_PHONE|HAS_EMAIL|HAS_TAX_ID|LIVES_AT]->(i)<-[:HAS_PHONE|HAS_EMAIL|HAS_TAX_ID|LIVES_AT]-(o:Customer) WHERE o <> c RETURN o.id AS other, count(DISTINCT i) AS shared ORDER BY shared DESC, other LIMIT 25"
+  },
+  {
+   "id": "F1",
+   "role": "fraud",
+   "title": "Shared counterparties (4 hops)",
+   "what": "Customers whose accounts transact with the same counterparties as this customer's accounts.",
+   "compare": "rows",
+   "cypher": "MATCH (c:Customer {id: $cid})-[:OWNS]->(:Account)-[:TRANSACTED_WITH]->(ep:Counterparty)<-[:TRANSACTED_WITH]-(:Account)<-[:OWNS]-(o:Customer) WHERE o <> c RETURN o.id AS other, count(DISTINCT ep) AS sharedCounterparties ORDER BY sharedCounterparties DESC, other LIMIT 20"
+  },
+  {
+   "id": "F2",
+   "role": "fraud",
+   "title": "Mule-account candidates",
+   "what": "Accounts transacting with an unusually high number of counterparties (scan + aggregation over every transaction link).",
+   "compare": "rows",
+   "cypher": "MATCH (a:Account)-[:TRANSACTED_WITH]->(ep:Counterparty) WITH a, count(ep) AS d WHERE d >= $min_degree RETURN a.id AS account, d ORDER BY d DESC, account LIMIT 20"
+  },
+  {
+   "id": "F3",
+   "role": "fraud",
+   "title": "Identity rings (Cypher)",
+   "what": "Pairs of customers sharing two or more identifiers (phone, e-mail, address): the planted fraud rings.",
+   "compare": "rows",
+   "cypher": "MATCH (c1:Customer)-[:HAS_PHONE|HAS_EMAIL|LIVES_AT]->(i)<-[:HAS_PHONE|HAS_EMAIL|LIVES_AT]-(c2:Customer) WHERE c1.id < c2.id WITH c1, c2, count(DISTINCT i) AS shared WHERE shared >= 2 RETURN count(*) AS suspiciousPairs"
+  },
+  {
+   "id": "F4",
+   "role": "fraud",
+   "title": "Path between two suspects",
+   "what": "Shortest connection (up to 6 hops) between two customers.",
+   "compare": "rows",
+   "cypher_neo4j": "MATCH (a:Customer {id: $cid}), (b:Customer {id: $cid2}) MATCH p = shortestPath((a)-[*..6]-(b)) RETURN length(p) AS hops",
+   "cypher_falkordb": "MATCH (a:Customer {id: $cid}), (b:Customer {id: $cid2}) WITH b, [a] AS f, CASE WHEN a = b THEN 0 END AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 1 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 2 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 3 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 4 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 5 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 6 END) AS hops RETURN hops",
+   "syntax_note": "Neo4j uses its built-in shortestPath. The embedded FalkorDB build in this Space (4.18) has no undirected shortestPath and its algo.SPpaths enumerates paths (exponential at 6 hops), so FalkorDB runs the same search as a level-by-level breadth-first expansion in plain Cypher. Same answer; the FalkorDB server image in the migration kit also accepts RETURN length(shortestPath((a)-[*..6]-(b)))."
+  },
+  {
+   "id": "C1",
+   "role": "compliance",
+   "title": "SAR and case pipeline",
+   "what": "Customers with SARs, number of SARs, and open cases.",
+   "compare": "rows",
+   "cypher": "MATCH (c:Customer)-[:HAS_SAR]->(s:SAR) WITH count(DISTINCT c) AS sarCustomers, count(s) AS sars MATCH (k:Case) RETURN sarCustomers, sars, count(k) AS cases"
+  },
+  {
+   "id": "C2",
+   "role": "compliance",
+   "title": "High-risk customers with open alerts, by branch",
+   "what": "Top branches by open alerts on High-risk customers.",
+   "compare": "rows",
+   "cypher": "MATCH (b:Branch)<-[:BANKS_AT]-(c:Customer)-[:HAS_RISK_RATING]->(:RiskRating {band: 'High'}) MATCH (c)-[:HAS_ALERT]->(a:Alert {status: 'open'}) RETURN b.id AS branch, count(DISTINCT c) AS customers, count(a) AS openAlerts ORDER BY openAlerts DESC, branch LIMIT 10"
+  },
+  {
+   "id": "C3",
+   "role": "compliance",
+   "title": "Cash-intensive exposure",
+   "what": "Customers in cash-intensive Industry sectors and their cash reports.",
+   "compare": "rows",
+   "cypher": "MATCH (:Industry {sector: 'cash-intensive'})<-[:IN_INDUSTRY]-(c:Customer)-[:FILED_CASH_REPORT]->(l:CashReport) RETURN count(DISTINCT c) AS customers, count(l) AS cashReports, round(sum(l.amount)) AS total"
+  },
+  {
+   "id": "C4",
+   "role": "compliance",
+   "title": "PEPs with alerts",
+   "what": "Politically exposed persons and their alerts.",
+   "compare": "rows",
+   "cypher": "MATCH (c:Customer {pep: true})-[:HAS_ALERT]->(a:Alert) RETURN count(DISTINCT c) AS peps, count(a) AS alerts"
+  },
+  {
+   "id": "D1",
+   "role": "datasci",
+   "title": "Connected components (WCC) on the identity network",
+   "what": "Weakly connected components over customers and shared phones, addresses, e-mails.",
+   "compare": "rows",
+   "cypher_falkordb": "CALL algo.WCC({nodeLabels: ['Customer', 'Phone', 'Address', 'Email'], relationshipTypes: ['HAS_PHONE', 'LIVES_AT', 'HAS_EMAIL']}) YIELD node, componentId WITH componentId, count(*) AS size RETURN count(*) AS components, max(size) AS largest",
+   "neo4j_setup": "CALL gds.graph.project('cmp_idn', ['Customer', 'Phone', 'Address', 'Email'], ['HAS_PHONE', 'LIVES_AT', 'HAS_EMAIL'])",
+   "cypher_neo4j": "CALL gds.wcc.stream('cmp_idn') YIELD nodeId, componentId WITH componentId, count(*) AS size RETURN count(*) AS components, max(size) AS largest",
+   "neo4j_teardown": "CALL gds.graph.drop('cmp_idn', false) YIELD graphName RETURN graphName",
+   "syntax_note": "Neo4j GDS works on an in-memory projection that must be built first (timed separately as 'projection'); FalkorDB runs the algorithm on the live graph."
+  },
+  {
+   "id": "D2",
+   "role": "datasci",
+   "title": "Degree centrality: busiest counterparties",
+   "what": "Counterparties with the most incoming transaction links (pure Cypher on both).",
+   "compare": "rows",
+   "cypher": "MATCH (ep:Counterparty)<-[:TRANSACTED_WITH]-() WITH ep, count(*) AS degree RETURN ep.id AS party, degree ORDER BY degree DESC, party LIMIT 10"
+  },
+  {
+   "id": "D3",
+   "role": "datasci",
+   "title": "PageRank on the transaction network",
+   "what": "Top 10 counterparties by PageRank over TRANSACTED_WITH.",
+   "compare": "topk_overlap",
+   "cypher_falkordb": "CALL algo.pageRank(NULL, 'TRANSACTED_WITH') YIELD node, score RETURN node.id AS party ORDER BY score DESC, party LIMIT 10",
+   "neo4j_setup": "CALL gds.graph.project('cmp_tx', ['Account', 'Counterparty'], 'TRANSACTED_WITH')",
+   "cypher_neo4j": "CALL gds.pageRank.stream('cmp_tx') YIELD nodeId, score RETURN gds.util.asNode(nodeId).id AS party ORDER BY score DESC, party LIMIT 10",
+   "neo4j_teardown": "CALL gds.graph.drop('cmp_tx', false) YIELD graphName RETURN graphName",
+   "syntax_note": "Implementations differ in defaults (iterations, tolerance); compared by overlap of the top 10, not exact scores."
+  },
+  {
+   "id": "D4",
+   "role": "datasci",
+   "title": "Community detection (label propagation)",
+   "what": "Communities on the identity network with label propagation, available in both engines.",
+   "compare": "info",
+   "cypher_falkordb": "CALL algo.labelPropagation({nodeLabels: ['Customer', 'Phone', 'Address', 'Email'], relationshipTypes: ['HAS_PHONE', 'LIVES_AT', 'HAS_EMAIL']}) YIELD node, communityId RETURN count(DISTINCT communityId) AS communities",
+   "neo4j_setup": "CALL gds.graph.project('cmp_lpa', ['Customer', 'Phone', 'Address', 'Email'], {HAS_PHONE: {orientation: 'UNDIRECTED'}, LIVES_AT: {orientation: 'UNDIRECTED'}, HAS_EMAIL: {orientation: 'UNDIRECTED'}})",
+   "cypher_neo4j": "CALL gds.labelPropagation.stream('cmp_lpa') YIELD communityId RETURN count(DISTINCT communityId) AS communities",
+   "neo4j_teardown": "CALL gds.graph.drop('cmp_lpa', false) YIELD graphName RETURN graphName",
+   "syntax_note": "Label propagation implementations differ (iteration limits, tie-breaking, direction handling), so community counts are not expected to match; shown for timing and as a capability that exists in both."
+  },
+  {
+   "id": "D5",
+   "role": "datasci",
+   "title": "Louvain / Leiden communities",
+   "what": "Modularity-based community detection used for fraud-ring detection.",
+   "compare": "info",
+   "neo4j_setup": "CALL gds.graph.project('cmp_lv', ['Customer', 'Phone', 'Address', 'Email'], {HAS_PHONE: {orientation: 'UNDIRECTED'}, LIVES_AT: {orientation: 'UNDIRECTED'}, HAS_EMAIL: {orientation: 'UNDIRECTED'}})",
+   "cypher_neo4j": "CALL gds.louvain.stream('cmp_lv') YIELD communityId RETURN count(DISTINCT communityId) AS communities",
+   "neo4j_teardown": "CALL gds.graph.drop('cmp_lv', false) YIELD graphName RETURN graphName",
+   "cypher_falkordb": "MATCH (c:Customer)-[:HAS_PHONE|LIVES_AT|HAS_EMAIL]->(x) RETURN id(c) AS a, id(x) AS b UNION ALL MATCH (n:Customer) RETURN -1 AS a, count(n) AS b UNION ALL MATCH (n:Phone) RETURN -1 AS a, count(n) AS b UNION ALL MATCH (n:Address) RETURN -1 AS a, count(n) AS b UNION ALL MATCH (n:Email) RETURN -1 AS a, count(n) AS b",
+   "falkordb_post": "louvain",
+   "syntax_note": "FalkorDB has no in-database Louvain/Leiden. Workaround timed here: one Cypher query exports the same identity subgraph, then Louvain runs outside the database (python-igraph, community_multilevel). FalkorDB time = export + Louvain. Community counts differ slightly by implementation; label propagation (D4) is the in-database alternative."
+  },
+  {
+   "id": "D6",
+   "role": "datasci",
+   "title": "Node similarity: counterparty similarity",
+   "what": "Accounts with the most similar sets of counterparties (Jaccard).",
+   "compare": "rows",
+   "neo4j_setup": "CALL gds.graph.project('cmp_sim', ['Account', 'Counterparty'], 'TRANSACTED_WITH')",
+   "cypher_neo4j": "CALL gds.nodeSimilarity.stream('cmp_sim', {topK: 1, degreeCutoff: 25}) YIELD similarity RETURN count(*) AS pairs, round(avg(similarity) * 1000) / 1000 AS avgSimilarity",
+   "neo4j_teardown": "CALL gds.graph.drop('cmp_sim', false) YIELD graphName RETURN graphName",
+   "cypher_falkordb": "MATCH (a:Account)-[:TRANSACTED_WITH]->(c:Counterparty) WITH a, collect(DISTINCT id(c)) AS cs WHERE size(cs) >= 25 RETURN id(a) AS account, cs AS counterparties",
+   "falkordb_post": "node_similarity",
+   "syntax_note": "FalkorDB has no in-database node-similarity procedure. Workaround timed here: one Cypher query exports each account's counterparties (degree cutoff 25 applied in the database), then the same Jaccard top-1 calculation as gds.nodeSimilarity runs outside the database in Python. FalkorDB time = export + similarity. Embeddings (FastRP, Node2Vec, GraphSAGE) remain Neo4j-GDS-only."
+  },
+  {
+   "id": "S1",
+   "role": "semantics",
+   "title": "Parallel relationships",
+   "what": "Counts transaction links two ways. If the data has parallel relationships (same account and counterparty twice), FalkorDB's count(ep) counts distinct neighbours while Neo4j counts every relationship.",
+   "compare": "rows",
+   "cypher": "MATCH (a:Account)-[t:TRANSACTED_WITH]->(ep:Counterparty) WITH count(t) AS relationships MATCH (a:Account)-[:TRANSACTED_WITH]->(ep:Counterparty) WITH relationships, a, count(ep) AS d RETURN relationships, sum(d) AS countedViaNeighbours",
+   "syntax_note": "On data without parallel relationships both columns are equal on both engines. On FalkorDB with parallel relationships the second column is lower: bind the relationship variable in counting queries."
+  }
+ ]
+}
