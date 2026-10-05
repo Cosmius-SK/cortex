@@ -159,11 +159,10 @@
    "role": "fraud",
    "title": "Path between two suspects",
    "what": "Shortest connection (up to 6 hops) between two customers.",
-   "compare": "capability",
+   "compare": "rows",
    "cypher_neo4j": "MATCH (a:Customer {id: $cid}), (b:Customer {id: $cid2}) MATCH p = shortestPath((a)-[*..6]-(b)) RETURN length(p) AS hops",
-   "cypher_falkordb": null,
-   "syntax_note": null,
-   "gap": "The embedded FalkorDB build in this Space (4.18) rejects undirected shortestPath, and its algo.SPpaths procedure did not finish on this graph, so the path search is Neo4j-only here. The FalkorDB server image used by the migration kit runs this query (RETURN length(shortestPath((a)-[*..6]-(b)))) with the same answer."
+   "cypher_falkordb": "MATCH (a:Customer {id: $cid}), (b:Customer {id: $cid2}) WITH b, [a] AS f, CASE WHEN a = b THEN 0 END AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 1 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 2 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 3 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 4 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 5 END) AS hops UNWIND CASE WHEN hops IS NULL THEN f ELSE [null] END AS x OPTIONAL MATCH (x)--(y) WITH b, hops, collect(DISTINCT y) AS f WITH b, f, coalesce(hops, CASE WHEN b IN f THEN 6 END) AS hops RETURN hops",
+   "syntax_note": "Neo4j uses its built-in shortestPath. The embedded FalkorDB build in this Space (4.18) has no undirected shortestPath and its algo.SPpaths enumerates paths (exponential at 6 hops), so FalkorDB runs the same search as a level-by-level breadth-first expansion in plain Cypher. Same answer; the FalkorDB server image in the migration kit also accepts RETURN length(shortestPath((a)-[*..6]-(b)))."
   },
   {
    "id": "C1",
