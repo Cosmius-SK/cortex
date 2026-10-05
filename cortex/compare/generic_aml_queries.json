@@ -258,12 +258,13 @@
    "role": "datasci",
    "title": "Node similarity: counterparty similarity",
    "what": "Accounts with the most similar sets of counterparties (Jaccard).",
-   "compare": "capability",
+   "compare": "rows",
    "neo4j_setup": "CALL gds.graph.project('cmp_sim', ['Account', 'Counterparty'], 'TRANSACTED_WITH')",
    "cypher_neo4j": "CALL gds.nodeSimilarity.stream('cmp_sim', {topK: 1, degreeCutoff: 25}) YIELD similarity RETURN count(*) AS pairs, round(avg(similarity) * 1000) / 1000 AS avgSimilarity",
    "neo4j_teardown": "CALL gds.graph.drop('cmp_sim', false) YIELD graphName RETURN graphName",
-   "cypher_falkordb": null,
-   "gap": "FalkorDB has no node-similarity procedure in the tested version. A Cypher Jaccard query is possible for a single account, but not an all-pairs algorithm. Graph embeddings (FastRP, Node2Vec, GraphSAGE) are also Neo4j-GDS-only."
+   "cypher_falkordb": "MATCH (a:Account)-[:TRANSACTED_WITH]->(c:Counterparty) WITH a, collect(DISTINCT id(c)) AS cs WHERE size(cs) >= 25 RETURN id(a) AS account, cs AS counterparties",
+   "falkordb_post": "node_similarity",
+   "syntax_note": "FalkorDB has no in-database node-similarity procedure. Workaround timed here: one Cypher query exports each account's counterparties (degree cutoff 25 applied in the database), then the same Jaccard top-1 calculation as gds.nodeSimilarity runs outside the database in Python. FalkorDB time = export + similarity. Embeddings (FastRP, Node2Vec, GraphSAGE) remain Neo4j-GDS-only."
   },
   {
    "id": "S1",

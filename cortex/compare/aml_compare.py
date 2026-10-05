@@ -188,8 +188,29 @@ def _louvain(rows):
     return [[len(igraph.Graph(n=max(total, len(ids)), edges=edges).community_multilevel())]]
 
 
+def _node_similarity(rows):
+    """Rows of (node id, [neighbour ids]) already filtered by degreeCutoff -> [[pairs, avgSimilarity]],
+    matching gds.nodeSimilarity (Jaccard, topK 1): each node's best positive Jaccard to another node."""
+    from collections import defaultdict
+    nb = {a: set(cs) for a, cs in rows}
+    inv = defaultdict(list)
+    for a, s in nb.items():
+        for c in s:
+            inv[c].append(a)
+    best = []
+    for a, s in nb.items():
+        inter = defaultdict(int)
+        for c in s:
+            for o in inv[c]:
+                if o != a:
+                    inter[o] += 1
+        if inter:
+            best.append(max(i / (len(s) + len(nb[o]) - i) for o, i in inter.items()))
+    return [[len(best), round(sum(best) / len(best) * 1000) / 1000 if best else None]]
+
+
 # Post-processing outside the database, for capabilities an engine lacks in-database (named by "falkordb_post").
-POST = {"louvain": _louvain}
+POST = {"louvain": _louvain, "node_similarity": _node_similarity}
 
 
 def _timed(eng, cypher, params, runs, warmup):

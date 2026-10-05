@@ -213,7 +213,7 @@ Question ─► role filter (graph-native access control) ─► Vector RAG  vs 
     <ul class="sub" style="padding-left:18px">
       <li><b>Generic model, illustrative volumes.</b> Your organisation's exact model and, inside your network, your real data run in the private migration kit. See the <a href="#" onclick="tab('guide');return false">Engineer guide</a>.</li>
       <li><b>Neo4j GDS algorithms</b> work on an in-memory projection that must be built first. Its time is shown and included in the total. FalkorDB runs its algorithms on the live graph.</li>
-      <li><b>Capability gaps are shown, not hidden:</b> Louvain/Leiden, node similarity and graph embeddings exist in Neo4j GDS only in the tested FalkorDB version. Louvain (D5) is shown with its practical workaround: export + igraph outside the database, timed in full.</li>
+      <li><b>Capability gaps are shown, not hidden:</b> Louvain/Leiden, node similarity and graph embeddings exist in Neo4j GDS only in the tested FalkorDB version. Louvain (D5) and node similarity (D6) are shown with their practical workaround: export with Cypher, compute outside the database, timed in full. Embeddings (FastRP, Node2Vec, GraphSAGE) have no workaround here.</li>
       <li><b>Semantics check (S1):</b> with parallel relationships, FalkorDB's <code>count(neighbour)</code> counts distinct neighbours. The demo data has none; your data might.</li>
       <li>Both engines run in one shared, free container. Treat the ratios as indicative, and use the kit on your own servers for real numbers.</li>
     </ul></div>
