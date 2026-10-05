@@ -175,6 +175,23 @@ def agreement(kind, a_rows, b_rows):
     return ("match", f"{len(na)} identical row(s)") if na == nb else ("mismatch", f"{len(na)} vs {len(nb)} rows differ")
 
 
+def _louvain(rows):
+    """Rows of (node id, neighbour id), plus (-1, n) rows giving node counts so isolated nodes are included,
+    -> [[community count]] via igraph's Louvain (community_multilevel)."""
+    import igraph
+    ids, edges, total = {}, [], 0
+    for a, b in rows:
+        if a == -1:
+            total += b
+        else:
+            edges.append((ids.setdefault(a, len(ids)), ids.setdefault(b, len(ids))))
+    return [[len(igraph.Graph(n=max(total, len(ids)), edges=edges).community_multilevel())]]
+
+
+# Post-processing outside the database, for capabilities an engine lacks in-database (named by "falkordb_post").
+POST = {"louvain": _louvain}
+
+
 def _timed(eng, cypher, params, runs, warmup):
     rows, times, server = None, [], []
     for i in range(warmup + runs):
@@ -210,8 +227,19 @@ def run_query(q, engines, params, runs=5, warmup=1):
                 res["projection_ms"] = round((time.perf_counter() - t) * 1000, 2)
                 res["setup"] = q["neo4j_setup"]
             rows, stats = _timed(eng, cypher, params, runs, warmup)
+            post = POST.get(q.get("falkordb_post")) if eng.name == "FalkorDB" else None
+            if post:
+                times = []
+                for _ in range(warmup + runs):
+                    t = time.perf_counter()
+                    out_rows = post(rows)
+                    times.append((time.perf_counter() - t) * 1000)
+                res["post_ms"] = round(statistics.median(times[warmup:]), 2)
+                res["post"] = q["falkordb_post"]
+                res["export_rows"] = len(rows)
+                rows = out_rows
             res.update(stats, rows=_norm(rows[:25]), row_count=len(rows), status="ok")
-            res["total_ms"] = round(stats["p50_ms"] + res.get("projection_ms", 0), 2)
+            res["total_ms"] = round(stats["p50_ms"] + res.get("projection_ms", 0) + res.get("post_ms", 0), 2)
             rows_by[eng.name] = rows
         except Exception as e:
             res.update(status="error", error=f"{type(e).__name__}: {str(e)[:300]}")

@@ -43,7 +43,7 @@ pre{background:#0b1b3a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:au
 .overlay{position:fixed;inset:0;background:rgba(11,27,58,.92);color:#fff;display:flex;align-items:center;justify-content:center;z-index:20;text-align:center;padding:20px}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:15;padding:16px}
 .modal .card{max-width:560px;width:100%}
-.err{color:var(--red);font-size:13px}.ok{color:#047857;font-size:13px}
+.err{color:var(--red);font-size:13px}.gapn{font-size:13px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 10px}.ok{color:#047857;font-size:13px}
 .drop{border:2px dashed #cbd5e1;border-radius:14px;padding:26px;text-align:center;background:#fff}
 .bar{height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden}.bar>i{display:block;height:100%}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--or);border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
@@ -213,7 +213,7 @@ Question ─► role filter (graph-native access control) ─► Vector RAG  vs 
     <ul class="sub" style="padding-left:18px">
       <li><b>Generic model, illustrative volumes.</b> Your organisation's exact model and, inside your network, your real data run in the private migration kit. See the <a href="#" onclick="tab('guide');return false">Engineer guide</a>.</li>
       <li><b>Neo4j GDS algorithms</b> work on an in-memory projection that must be built first. Its time is shown and included in the total. FalkorDB runs its algorithms on the live graph.</li>
-      <li><b>Capability gaps are shown, not hidden:</b> Louvain/Leiden, node similarity and graph embeddings exist in Neo4j GDS only in the tested FalkorDB version.</li>
+      <li><b>Capability gaps are shown, not hidden:</b> Louvain/Leiden, node similarity and graph embeddings exist in Neo4j GDS only in the tested FalkorDB version. Louvain (D5) is shown with its practical workaround: export + igraph outside the database, timed in full.</li>
       <li><b>Semantics check (S1):</b> with parallel relationships, FalkorDB's <code>count(neighbour)</code> counts distinct neighbours. The demo data has none; your data might.</li>
       <li>Both engines run in one shared, free container. Treat the ratios as indicative, and use the kit on your own servers for real numbers.</li>
     </ul></div>
@@ -509,14 +509,14 @@ async function cmpLoad(){
 function cmpCard(r){
   const n = r.engines["Neo4j"] || {}, f = r.engines["FalkorDB"] || {};
   const tot = d => d.status === "ok" ? d.total_ms : null, mx = Math.max(tot(n) || 0, tot(f) || 0) || 1;
-  const bar = (lab, d, col) => `<div class="cbar"><span class="lab">${lab}</span><span class="tr"><i style="width:${d.status==="ok"?Math.max(2,100*d.total_ms/mx):0}%;background:${col}"></i></span><span class="v">${d.status==="ok" ? `<b>${ms(d.total_ms)}</b>${d.projection_ms?` <span class="muted">(${ms(d.projection_ms)} projection)</span>`:""}` : `<span class="muted">${esc(d.status || "n/a")}</span>`}</span></div>`;
+  const bar = (lab, d, col) => `<div class="cbar"><span class="lab">${lab}</span><span class="tr"><i style="width:${d.status==="ok"?Math.max(2,100*d.total_ms/mx):0}%;background:${col}"></i></span><span class="v">${d.status==="ok" ? `<b>${ms(d.total_ms)}</b>${d.projection_ms?` <span class="muted">(${ms(d.projection_ms)} projection)</span>`:""}${d.post_ms?` <span class="muted">(${ms(d.total_ms-d.post_ms)} export + ${ms(d.post_ms)} ${esc(d.post)} outside DB)</span>`:""}` : `<span class="muted">${esc(d.status || "n/a")}</span>`}</span></div>`;
   const ag = r.agreement === "n/a" ? "na" : r.agreement;
   const sp = r.speedup ? (r.speedup >= 1 ? `FalkorDB ${r.speedup}× faster` : `Neo4j ${(1/r.speedup).toFixed(2)}× faster`) : "";
   const rows = d => d.rows ? `<pre style="max-height:150px">${esc(d.rows.slice(0,6).map(x => JSON.stringify(x)).join("\n"))}${d.row_count>6?`\n… ${d.row_count} rows`:""}</pre>` : "";
   return `<div class="card" id="cq_${r.id}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><b>${esc(r.id)} · ${esc(r.title)}</b><div class="sub" style="font-size:13px">${esc(r.what)}</div></div>
     <div style="text-align:right"><span class="badge b-${esc(ag)}">${esc(r.agreement || "")}</span><div class="muted">${esc(r.agreement_detail || "")}</div><div style="font-weight:700;color:var(--navy)">${esc(sp)}</div></div></div>
     <div style="margin-top:8px">${bar("Neo4j", n, "#64748b")}${bar("FalkorDB", f, "linear-gradient(90deg,var(--or),#fb923c)")}</div>
-    ${r.gap ? `<p class="err" style="margin-top:6px">${esc(r.gap)}</p>` : ""}${r.syntax_note ? `<p class="muted" style="margin-top:6px">${esc(r.syntax_note)}</p>` : ""}
+    ${r.gap ? `<p class="gapn" style="margin-top:6px"><b>Capability gap:</b> ${esc(r.gap)}</p>` : ""}${r.syntax_note ? `<p class="muted" style="margin-top:6px">${esc(r.syntax_note)}</p>` : ""}
     <div class="chips" style="margin-top:8px"><button class="chip" onclick="cmpRun('${r.id}')">Run live now</button><button class="chip" onclick="this.parentNode.nextElementSibling.classList.toggle('hidden')">Cypher and results</button>${r.ran_at?`<span class="muted">live run ${esc(r.ran_at)}</span>`:""}</div>
     <div class="hidden grid g2" style="margin-top:8px"><div><h3>Neo4j</h3>${n.setup?`<pre>${esc(n.setup)}</pre>`:""}<pre>${esc(n.cypher || "not available")}</pre>${rows(n)}${n.error?`<p class="err">${esc(n.error)}</p>`:""}</div>
       <div><h3>FalkorDB</h3><pre>${esc(f.cypher || "not available")}</pre>${rows(f)}${f.error?`<p class="err">${esc(f.error)}</p>`:""}</div></div></div>`;

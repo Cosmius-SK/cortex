@@ -245,12 +245,13 @@
    "role": "datasci",
    "title": "Louvain / Leiden communities",
    "what": "Modularity-based community detection used for fraud-ring detection.",
-   "compare": "capability",
+   "compare": "info",
    "neo4j_setup": "CALL gds.graph.project('cmp_lv', ['Customer', 'Phone', 'Address', 'Email'], {HAS_PHONE: {orientation: 'UNDIRECTED'}, LIVES_AT: {orientation: 'UNDIRECTED'}, HAS_EMAIL: {orientation: 'UNDIRECTED'}})",
    "cypher_neo4j": "CALL gds.louvain.stream('cmp_lv') YIELD communityId RETURN count(DISTINCT communityId) AS communities",
    "neo4j_teardown": "CALL gds.graph.drop('cmp_lv', false) YIELD graphName RETURN graphName",
-   "cypher_falkordb": null,
-   "gap": "FalkorDB has no Louvain/Leiden procedure in the tested version. Alternatives: WCC + label propagation (D1, D4), or run Louvain outside the database (e.g. networkx/igraph on an exported subgraph)."
+   "cypher_falkordb": "MATCH (c:Customer)-[:HAS_PHONE|LIVES_AT|HAS_EMAIL]->(x) RETURN id(c) AS a, id(x) AS b UNION ALL MATCH (n:Customer) RETURN -1 AS a, count(n) AS b UNION ALL MATCH (n:Phone) RETURN -1 AS a, count(n) AS b UNION ALL MATCH (n:Address) RETURN -1 AS a, count(n) AS b UNION ALL MATCH (n:Email) RETURN -1 AS a, count(n) AS b",
+   "falkordb_post": "louvain",
+   "syntax_note": "FalkorDB has no in-database Louvain/Leiden. Workaround timed here: one Cypher query exports the same identity subgraph, then Louvain runs outside the database (python-igraph, community_multilevel). FalkorDB time = export + Louvain. Community counts differ slightly by implementation; label propagation (D4) is the in-database alternative."
   },
   {
    "id": "D6",
