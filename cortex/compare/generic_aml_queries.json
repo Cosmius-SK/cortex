@@ -159,10 +159,11 @@
    "role": "fraud",
    "title": "Path between two suspects",
    "what": "Shortest connection (up to 6 hops) between two customers.",
-   "compare": "rows",
+   "compare": "capability",
    "cypher_neo4j": "MATCH (a:Customer {id: $cid}), (b:Customer {id: $cid2}) MATCH p = shortestPath((a)-[*..6]-(b)) RETURN length(p) AS hops",
-   "cypher_falkordb": "MATCH (a:Customer {id: $cid}), (b:Customer {id: $cid2}) CALL algo.SPpaths({sourceNode: a, targetNode: b, relDirection: 'both', maxLen: 6, pathCount: 1}) YIELD path RETURN length(path) AS hops",
-   "syntax_note": "Neo4j uses shortestPath in MATCH. This FalkorDB build (4.18, embedded) has no undirected shortestPath, so it uses its algo.SPpaths procedure with relDirection 'both'. Same answer."
+   "cypher_falkordb": null,
+   "syntax_note": null,
+   "gap": "The embedded FalkorDB build in this Space (4.18) rejects undirected shortestPath, and its algo.SPpaths procedure did not finish on this graph, so the path search is Neo4j-only here. The FalkorDB server image used by the migration kit runs this query (RETURN length(shortestPath((a)-[*..6]-(b)))) with the same answer."
   },
   {
    "id": "C1",
