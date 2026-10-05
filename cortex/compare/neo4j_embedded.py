@@ -2,7 +2,7 @@
 
 Downloads the official tarball and GDS jar once (cached under CORTEX_NEO4J_HOME), imports the comparison CSVs with
 neo4j-admin (offline, the same files FalkorDB loaded), then starts the server on 127.0.0.1 only. Java comes from
-packages.txt (openjdk-17-jre-headless). Licences: Neo4j Community and GDS Community are GPLv3; used unmodified.
+the system if present, otherwise a portable Temurin 21 JRE is downloaded next to Neo4j (no apt needed). Licences: Neo4j Community and GDS Community are GPLv3; used unmodified.
 """
 import os
 import re
@@ -18,6 +18,8 @@ NEO4J_VERSION = os.getenv("CORTEX_NEO4J_VERSION", "5.26.31")
 GDS_VERSION = os.getenv("CORTEX_GDS_VERSION", "2.13.13")
 HOME = Path(os.getenv("CORTEX_NEO4J_HOME", "/tmp/cortex-neo4j"))
 BOLT_PORT = int(os.getenv("CORTEX_NEO4J_BOLT_PORT", "7687"))
+JRE_URL = os.getenv("CORTEX_JRE_URL", "https://github.com/adoptium/temurin21-binaries/releases/download/"
+                    "jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz")
 
 
 def _download(url, dest, log):
@@ -31,10 +33,23 @@ def _download(url, dest, log):
     return dest
 
 
+def _ensure_java(log):
+    if shutil.which("java"):
+        return
+    jre = HOME / "jre"
+    if not (jre / "bin" / "java").exists():
+        tgz = _download(JRE_URL, HOME / "jre.tgz", log)
+        with tarfile.open(tgz) as t:
+            top = t.getnames()[0].split("/")[0]
+            t.extractall(HOME)
+        (HOME / top).rename(jre)
+    os.environ["JAVA_HOME"] = str(jre)
+    os.environ["PATH"] = f"{jre / 'bin'}:{os.environ['PATH']}"
+
+
 def install(log=print):
-    if not shutil.which("java"):
-        raise RuntimeError("Java not found (packages.txt must install openjdk-17-jre-headless)")
     HOME.mkdir(parents=True, exist_ok=True)
+    _ensure_java(log)
     root = HOME / f"neo4j-community-{NEO4J_VERSION}"
     if not (root / "bin" / "neo4j").exists():
         tgz = _download(f"https://dist.neo4j.org/neo4j-community-{NEO4J_VERSION}-unix.tar.gz", HOME / f"neo4j-{NEO4J_VERSION}.tgz", log)
